@@ -1,13 +1,4 @@
-// Ride Segmentation - data classes mirroring the Laravel JSON shapes:
-//   GET /api/trips/{id}/segments
-//   GET /api/segments/search?from=&to=&seats=
-//   POST /api/segments/book
-//
-// These models intentionally stay simple and immutable so they can be
-// used across screens without controller coupling.
-
 import 'trip_model.dart';
-
 class TripSegmentModel {
   final int id;
   final int tripId;
@@ -53,9 +44,6 @@ class TripSegmentModel {
   String toString() =>
       '$startStop -> $endStop ($seatsAvailable/$seatsTotal, JOD$price, ${estimatedMinutes}m)';
 }
-
-/// A single hit from the segment search endpoint: the trip plus the
-/// specific legs that make up the requested route and their totals.
 class SegmentSearchResult {
   final TripModel trip;
   final List<TripSegmentModel> route;
@@ -91,7 +79,6 @@ class SegmentSearchResult {
   }
 }
 
-/// API call result wrapper for create/cancel actions.
 class SegmentActionResult {
   final bool success;
   final String message;

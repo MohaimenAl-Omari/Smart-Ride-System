@@ -12,6 +12,9 @@ class UserModel {
   final bool isActive;
   final String token;
 
+  /// Account balance. Positive = credit, negative = outstanding no-show debt.
+  final double balance;
+
   UserModel({
     required this.id,
     required this.name,
@@ -25,6 +28,7 @@ class UserModel {
     this.ratingAverage = 0,
     this.ratingsCount = 0,
     this.isActive = true,
+    this.balance = 0.0,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json, String token) {
@@ -43,6 +47,7 @@ class UserModel {
           ? json['is_active'] as bool
           : (json['is_active'] == 1 || json['is_active'] == '1'),
       token: token,
+      balance: _toDouble(json['balance']),
     );
   }
 
@@ -60,6 +65,7 @@ class UserModel {
         'ratings_count': ratingsCount,
         'is_active': isActive,
         'token': token,
+        'balance': balance,
       };
 
   /// Used by the SessionService when restoring a saved session.
@@ -83,11 +89,10 @@ class UserModel {
               json['is_active'] == '1' ||
               json['is_active'] == true),
       token: (json['token'] ?? '').toString(),
+      balance: _toDouble(json['balance']),
     );
   }
 
-  /// Returns a copy with selected fields replaced. Used after profile
-  /// updates so the home screen can refresh without a re-login.
   UserModel copyWith({
     String? name,
     String? email,
@@ -99,6 +104,7 @@ class UserModel {
     int? ratingsCount,
     bool? isActive,
     String? token,
+    double? balance,
   }) {
     return UserModel(
       id: id,
@@ -113,6 +119,7 @@ class UserModel {
       ratingsCount: ratingsCount ?? this.ratingsCount,
       isActive: isActive ?? this.isActive,
       token: token ?? this.token,
+      balance: balance ?? this.balance,
     );
   }
 

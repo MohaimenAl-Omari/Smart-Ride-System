@@ -16,25 +16,25 @@ class Booking extends Model
         'dropoff_stop',
         'seats',
         'total_price',
+        'debt_carried',
         'status',
-        'checked_in_at',
+        'is_checked_in',
         'no_show',
+        'location_area',
+        'location_street',
+        'location_building',
+        'payment_method',
     ];
 
     protected $casts = [
-        'seats'         => 'integer',
-        'total_price'   => 'decimal:2',
-        'checked_in_at' => 'datetime',
-        'no_show'       => 'boolean',
+        'seats'          => 'integer',
+        'total_price'    => 'decimal:2',
+        'debt_carried'   => 'decimal:2',
+        'is_checked_in'  => 'boolean',
+        'no_show'        => 'boolean',
     ];
 
-    protected $appends = ['has_rating', 'is_checked_in'];
-
-
-    public function getIsCheckedInAttribute(): bool
-    {
-        return $this->checked_in_at !== null;
-    }
+    protected $appends = ['has_rating'];
 
     public function trip(): BelongsTo
     {

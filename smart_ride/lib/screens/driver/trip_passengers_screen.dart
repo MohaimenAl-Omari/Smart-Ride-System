@@ -8,11 +8,6 @@ import '../../models/booking_model.dart';
 import '../../controllers/booking_controller.dart';
 import '../../controllers/trip_controller.dart';
 
-/// Driver-side detail view for a single trip:
-/// - Route summary with stops
-/// - Trip controls (start / complete / cancel)
-/// - List of all bookings for this trip with per-passenger
-///   accept / reject / check-in actions (F6, F7, F8 in the spec).
 class TripPassengersScreen extends StatefulWidget {
   final UserModel user;
   final TripModel trip;
@@ -31,7 +26,6 @@ class _TripPassengersScreenState extends State<TripPassengersScreen> {
   bool _loading = true;
   bool _busy = false;
   List<BookingModel> _bookings = [];
-  final Set<int> _checkedInIds = {};
 
   @override
   void initState() {
@@ -70,10 +64,20 @@ class _TripPassengersScreenState extends State<TripPassengersScreen> {
     if (ok) _load();
   }
 
-  void _checkIn(BookingModel b) {
+  Future<void> _checkIn(BookingModel b) async {
     HapticFeedback.lightImpact();
-    setState(() => _checkedInIds.add(b.id));
-    AppToast.show(context, 'Checked in ${b.passengerName ?? 'passenger'}');
+    setState(() => _busy = true);
+    final res = await _bookingCtl.driverCheckIn(widget.user.token, b.id);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    AppToast.show(
+      context,
+      res.success
+          ? 'Checked in ${b.passengerName ?? 'passenger'}'
+          : res.message,
+      error: !res.success,
+    );
+    if (res.success) _load();
   }
 
   Future<void> _start() async {
@@ -103,11 +107,9 @@ class _TripPassengersScreenState extends State<TripPassengersScreen> {
   int get _accepted =>
       _bookings.where((b) => b.status == 'accepted').length;
 
-  int get _checkedInCount {
-    final acceptedIds =
-        _bookings.where((b) => b.status == 'accepted').map((b) => b.id);
-    return acceptedIds.where(_checkedInIds.contains).length;
-  }
+  // Count is derived from the server-synced model field (is_checked_in = 1/0)
+  int get _checkedInCount =>
+      _bookings.where((b) => b.status == 'accepted' && b.isCheckedIn).length;
 
   bool get _canStart {
     return _trip.status == 'scheduled' &&
@@ -389,10 +391,68 @@ class _TripPassengersScreenState extends State<TripPassengersScreen> {
     );
   }
 
+  Widget _locationRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.primaryDark, size: 14),
+          const SizedBox(width: 6),
+          Text('$label: ',
+              style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentBadge(String method) {
+    final (label, icon, color) = switch (method) {
+      'card'   => ('Card', Icons.credit_card_rounded, AppColors.primary),
+      'wallet' => ('Wallet', Icons.account_balance_wallet_rounded, AppColors.sky),
+      _        => ('Cash', Icons.payments_rounded, AppColors.emerald),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 11),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _passengerCard(BookingModel b) {
     final isPending = b.status == 'pending';
     final isAccepted = b.status == 'accepted';
-    final isCheckedIn = _checkedInIds.contains(b.id);
+    // Use server-synced field (is_checked_in = 1/0)
+    final isCheckedIn = b.isCheckedIn;
 
     return Container(
       margin: const EdgeInsets.only(top: 10),
@@ -421,9 +481,18 @@ class _TripPassengersScreenState extends State<TripPassengersScreen> {
                   ],
                 ),
               ),
-              StatusBadge(
-                  status: isCheckedIn && isAccepted ? 'checked_in' : b.status,
-                  dense: true),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  StatusBadge(
+                      status: isCheckedIn && isAccepted ? 'checked_in' : b.status,
+                      dense: true),
+                  if (b.paymentMethod != null) ...[
+                    const SizedBox(height: 5),
+                    _paymentBadge(b.paymentMethod!),
+                  ],
+                ],
+              ),
             ],
           ),
           if (b.pickupStop != null || b.dropoffStop != null) ...[
@@ -450,6 +519,57 @@ class _TripPassengersScreenState extends State<TripPassengersScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                ],
+              ),
+            ),
+          ],
+          // ── Passenger manual location details ────────────────────
+          if (b.locationArea != null ||
+              b.locationStreet != null ||
+              b.locationBuilding != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: AppColors.primary.withOpacity(0.25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.pin_drop_rounded,
+                          color: AppColors.primaryDark, size: 13),
+                      SizedBox(width: 5),
+                      Text('Passenger Pickup Location',
+                          style: TextStyle(
+                              color: AppColors.primaryDark,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (b.locationArea?.isNotEmpty == true)
+                    _locationRow(
+                      Icons.map_rounded,
+                      'Area',
+                      b.locationArea!,
+                    ),
+                  if (b.locationStreet?.isNotEmpty == true)
+                    _locationRow(
+                      Icons.turn_slight_right_rounded,
+                      'Street',
+                      b.locationStreet!,
+                    ),
+                  if (b.locationBuilding?.isNotEmpty == true)
+                    _locationRow(
+                      Icons.domain_rounded,
+                      'Building',
+                      b.locationBuilding!,
+                    ),
                 ],
               ),
             ),

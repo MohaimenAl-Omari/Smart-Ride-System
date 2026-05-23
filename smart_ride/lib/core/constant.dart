@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'localization.dart';
 
 const String baseUrl = "http://127.0.0.1:8000/api";
-
-/// Smart Ride – Modern Teal & Navy palette.
-/// Light theme tuned for everyday ride-hailing usage: clean, bright,
-/// and high-contrast so passengers and drivers can read details quickly.
 class AppColors {
   // Surfaces
   static const Color background = Color(0xFFF6F8FB);   // page background
@@ -593,6 +590,250 @@ class InitialAvatar extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Emergency SOS Button
+// A floating red button shown on both passenger and driver home screens.
+// Tapping it opens a modal with direct-dial buttons for Jordan emergency lines.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class EmergencyButton extends StatelessWidget {
+  const EmergencyButton({super.key});
+
+  static const _numbers = [
+    _EmergencyLine('911', 'General Emergency', Icons.emergency_rounded),
+    _EmergencyLine('991', 'Police', Icons.local_police_rounded),
+    _EmergencyLine('199', 'Fire Department', Icons.local_fire_department_rounded),
+    _EmergencyLine('193', 'Ambulance / Civil Defense', Icons.local_hospital_rounded),
+  ];
+
+  void _show(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _EmergencySheet(numbers: _numbers),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _show(context),
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.rose,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.rose.withOpacity(0.45),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.sos_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text('SOS',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmergencyLine {
+  final String number;
+  final String label;
+  final IconData icon;
+  const _EmergencyLine(this.number, this.label, this.icon);
+}
+
+class _EmergencySheet extends StatelessWidget {
+  final List<_EmergencyLine> numbers;
+  const _EmergencySheet({required this.numbers});
+
+  Future<void> _call(BuildContext context, String number) async {
+    final uri = Uri(scheme: 'tel', path: number);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (context.mounted) {
+        AppToast.show(context,
+            'Could not launch dialer. Call $number manually.',
+            error: true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 10),
+          Container(
+            width: 38, height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceMuted,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.rose.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.emergency_rounded,
+                      color: AppColors.rose, size: 22),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Emergency Numbers',
+                          style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800)),
+                      Text('Tap a number to call immediately',
+                          style: TextStyle(
+                              color: AppColors.textSecondary, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceAlt,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.close_rounded,
+                        color: AppColors.textSecondary, size: 16),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Number rows
+          for (final line in numbers)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: GestureDetector(
+                onTap: () => _call(context, line.number),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 13),
+                  decoration: BoxDecoration(
+                    color: AppColors.roseSoft,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                        color: AppColors.rose.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.rose.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(line.icon,
+                            color: AppColors.rose, size: 20),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(line.label,
+                                style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 1),
+                            Text(line.number,
+                                style: const TextStyle(
+                                    color: AppColors.rose,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1.5)),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.rose,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.call_rounded,
+                                color: Colors.white, size: 15),
+                            SizedBox(width: 5),
+                            Text('Call',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            child: Text(
+              'Calls are made directly from your phone. '
+              'Stay calm and provide your location clearly.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: AppColors.textMuted.withOpacity(0.8),
+                  fontSize: 11.5,
+                  height: 1.4),
+            ),
+          ),
+        ],
       ),
     );
   }

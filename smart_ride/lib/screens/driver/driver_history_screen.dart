@@ -4,8 +4,6 @@ import '../../core/localization.dart';
 import '../../controllers/trip_controller.dart';
 import '../../models/user-model.dart';
 
-/// Driver-only "Previous trips" view. Shows completed/cancelled trips
-/// with passenger count, total earnings, route, date and status.
 class DriverHistoryScreen extends StatefulWidget {
   final UserModel user;
   const DriverHistoryScreen({super.key, required this.user});

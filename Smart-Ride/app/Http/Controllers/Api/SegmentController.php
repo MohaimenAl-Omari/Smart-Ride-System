@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Trip;
+use App\Services\FcmService;
 use App\Services\TripSegmentationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,8 +49,24 @@ class SegmentController extends Controller
             ], 403);
         }
 
+        $validator = Validator::make($request->all(), [
+            'segment_prices'   => 'nullable|array',
+            'segment_prices.*' => 'numeric|min:0',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => $validator->errors()->first(),
+            ], 400);
+        }
+
+        $segmentPrices = array_map(
+            'floatval',
+            $request->input('segment_prices', [])
+        );
+
         try {
-            $segments = $this->segments->generateSegments($trip);
+            $segments = $this->segments->generateSegments($trip, $segmentPrices);
         } catch (RuntimeException $e) {
             return response()->json([
                 'status'  => false,
@@ -150,10 +167,14 @@ class SegmentController extends Controller
     public function book(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'trip_id' => 'required|integer|exists:trips,id',
-            'from'    => 'required|string|max:120',
-            'to'      => 'required|string|max:120',
-            'seats'   => 'required|integer|min:1|max:10',
+            'trip_id'         => 'required|integer|exists:trips,id',
+            'from'            => 'required|string|max:120',
+            'to'              => 'required|string|max:120',
+            'seats'           => 'required|integer|min:1|max:10',
+            // Passenger pickup location — three structured text fields.
+            'location_area'     => 'nullable|string|max:150',
+            'location_street'   => 'nullable|string|max:150',
+            'location_building' => 'nullable|string|max:100',
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -163,14 +184,18 @@ class SegmentController extends Controller
         }
 
         $trip = Trip::findOrFail((int) $request->input('trip_id'));
+        $passenger = $request->user();
 
         try {
             $booking = $this->segments->bookSegment(
-                $request->user(),
+                $passenger,
                 $trip,
                 (string) $request->string('from'),
                 (string) $request->string('to'),
                 (int) $request->integer('seats'),
+                $request->input('location_area')     ?: null,
+                $request->input('location_street')   ?: null,
+                $request->input('location_building') ?: null,
             );
         } catch (InvalidArgumentException $e) {
             return response()->json([
@@ -184,10 +209,14 @@ class SegmentController extends Controller
             ], 409); // conflict (overlap / no seats)
         }
 
+        // Notify the driver about the new segment booking.
+        $route = "{$request->string('from')} → {$request->string('to')}";
+        FcmService::bookingCreated($trip->driver, $passenger->name, $route);
+
         return response()->json([
             'status'  => true,
             'message' => 'Segment booked.',
-            'booking' => $booking,
+            'booking' => $booking->fresh('segments'),
         ]);
     }
 

@@ -37,11 +37,24 @@ class _PassengerHomeState extends State<PassengerHome>
   List<TripModel> _trips = [];
   List<BookingModel> _bookings = [];
 
+  /// Mutable copy of the user — refreshed from /api/me on every load
+  /// so the debt balance banner always reflects the latest server state.
+  late UserModel _currentUser;
+
   @override
   void initState() {
     super.initState();
-    _refreshTrips();
-    _refreshBookings();
+    _currentUser = widget.user;
+    _refreshAll();
+  }
+
+  Future<void> _refreshAll() async {
+    // Refresh user balance first, then trips and bookings in parallel
+    final fresh = await _authCtl.getMe(widget.user.token);
+    if (mounted && fresh != null) {
+      setState(() => _currentUser = fresh);
+    }
+    await Future.wait([_refreshTrips(), _refreshBookings()]);
   }
 
   @override
@@ -146,7 +159,7 @@ class _PassengerHomeState extends State<PassengerHome>
     );
   }
 
-  String get _firstName => widget.user.name.split(' ').first;
+  String get _firstName => _currentUser.name.split(' ').first;
 
   @override
   Widget build(BuildContext context) {
@@ -159,6 +172,7 @@ class _PassengerHomeState extends State<PassengerHome>
             child: Column(
               children: [
                 _buildAppBar(),
+                if (_currentUser.balance < 0) _buildDebtBanner(),
                 _buildTabSwitch(),
                 Expanded(
                   child: _tab == 0 ? _buildSearchTab() : _buildBookingsTab(),
@@ -166,7 +180,104 @@ class _PassengerHomeState extends State<PassengerHome>
               ],
             ),
           ),
+          // ── Emergency SOS button ──────────────────────────────────
+          Positioned(
+            bottom: 24,
+            right: 20,
+            child: const EmergencyButton(),
+          ),
         ],
+      ),
+    );
+  }
+
+  /// Prominent debt card shown when the passenger has an unpaid no-show penalty.
+  Widget _buildDebtBanner() {
+    final debt = _currentUser.balance.abs();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFEF4444),
+            const Color(0xFFDC2626),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.rose.withOpacity(0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon badge
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.account_balance_wallet_rounded,
+                  color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Outstanding Debt',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${debt.toStringAsFixed(2)} JD',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      '⚠  You missed a trip check-in. This amount will be added to your next booking.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -182,7 +293,7 @@ class _PassengerHomeState extends State<PassengerHome>
               MaterialPageRoute(
                   builder: (_) => ProfileScreen(user: widget.user)),
             ),
-            child: InitialAvatar(name: widget.user.name, size: 44),
+            child: InitialAvatar(name: _currentUser.name, size: 44),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -613,7 +724,9 @@ class _PassengerHomeState extends State<PassengerHome>
     final timeStr = dt == null
         ? ''
         : '${dt.day}/${dt.month}  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    final canCancel = b.status == 'pending' || b.status == 'accepted';
+    // Cannot cancel once checked in (enforced on both client and server)
+    final canCancel = !b.isCheckedIn &&
+        (b.status == 'pending' || b.status == 'accepted');
 
     return GestureDetector(
       onTap: () async {
@@ -675,12 +788,36 @@ class _PassengerHomeState extends State<PassengerHome>
                     icon: Icons.event_seat_rounded,
                     text: '${b.seats} ${S.of(context).seats}'),
                 const Spacer(),
-                Text(
-                    '${b.totalPrice.toStringAsFixed(2)} ${S.of(context).currency}',
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                        '${b.totalPrice.toStringAsFixed(2)} ${S.of(context).currency}',
+                        style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800)),
+                    if (b.debtCarried > 0)
+                      Container(
+                        margin: const EdgeInsets.only(top: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.rose.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: AppColors.rose.withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          '+ ${b.debtCarried.toStringAsFixed(2)} JD debt',
+                          style: const TextStyle(
+                              color: AppColors.rose,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
             if (b.driverName != null) ...[

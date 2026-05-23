@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\SegmentController;
 use App\Http\Controllers\Api\TripController;
@@ -35,6 +36,12 @@ Route::middleware('api.auth')->group(function () {
     Route::post('/ratings', [RatingController::class, 'store']);
     Route::get('/drivers/{driver}/ratings', [RatingController::class, 'forDriver']);
 
+    // Notification inbox — polled by the Flutter app every 30 s (no Firebase)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
+
     // Driver-only endpoints
     Route::middleware('api.auth:driver')->group(function () {
         Route::get('/driver/trips', [TripController::class, 'myDriverTrips']);
@@ -47,6 +54,7 @@ Route::middleware('api.auth')->group(function () {
         Route::get('/driver/bookings', [BookingController::class, 'pendingForDriver']);
         Route::post('/driver/bookings/{booking}/accept', [BookingController::class, 'accept']);
         Route::post('/driver/bookings/{booking}/reject', [BookingController::class, 'reject']);
+        Route::post('/driver/bookings/{booking}/checkin', [BookingController::class, 'driverCheckIn']);
 
         // Ride Segmentation — driver-only
         Route::post('/driver/trips/{trip}/stops',              [SegmentController::class, 'addStop']);
@@ -59,6 +67,7 @@ Route::middleware('api.auth')->group(function () {
         Route::get('/bookings/mine', [BookingController::class, 'myBookings']);
         Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel']);
         Route::post('/bookings/{booking}/checkin', [BookingController::class, 'checkIn']);
+        Route::post('/bookings/{booking}/payment-method', [BookingController::class, 'setPaymentMethod']);
 
         // Ride Segmentation — passenger-only
         Route::post('/segments/book',[SegmentController::class, 'book']);

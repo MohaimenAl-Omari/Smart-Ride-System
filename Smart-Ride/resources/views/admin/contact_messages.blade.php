@@ -1,13 +1,13 @@
 @extends('admin.layout')
 
-@section('title', 'Reports')
+@section('title', 'Help Center')
 
 @section('content')
     <div class="mb-8">
         <div class="text-xs uppercase tracking-widest text-indigo-300/80">Support</div>
-        <h1 class="mt-1 text-3xl font-bold tracking-tight">User Reports</h1>
+        <h1 class="mt-1 text-3xl font-bold tracking-tight">Help Center</h1>
         <p class="mt-1 text-sm text-slate-400">
-            Inbound "Contact us" messages from passengers and drivers.
+            Inbound messages from passengers and drivers who need assistance.
         </p>
     </div>
 

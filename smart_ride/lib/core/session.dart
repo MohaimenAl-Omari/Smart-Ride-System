@@ -33,13 +33,10 @@ class SessionService {
     }
   }
 
-  /// Clear the saved session — call on logout or when the server
-  /// reports the token is no longer valid.
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kUserKey);
   }
 
-  /// Convenience helper used by app start.
   static Future<bool> hasSession() async => (await load()) != null;
 }

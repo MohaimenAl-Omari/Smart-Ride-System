@@ -31,12 +31,13 @@ class _PassengerHistoryScreenState extends State<PassengerHistoryScreen> {
     final all = await _ctl.myBookings(widget.user.token);
     if (!mounted) return;
     setState(() {
+      // 'no_show' is a boolean flag (b.noShow), not a status value.
+      // The DB status enum only has: pending/accepted/rejected/cancelled/completed.
       _items = all
           .where((b) =>
               b.status == 'completed' ||
               b.status == 'cancelled' ||
               b.status == 'rejected' ||
-              b.status == 'no_show' ||
               b.status == 'refunded')
           .toList();
       _loading = false;
@@ -150,7 +151,9 @@ class _PassengerHistoryScreenState extends State<PassengerHistoryScreen> {
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3)),
                 ),
-                StatusBadge(status: b.status),
+                // If the passenger was a no-show, surface that badge
+                // instead of the generic 'completed' label.
+                StatusBadge(status: b.noShow ? 'no_show' : b.status),
               ],
             ),
             const SizedBox(height: 8),

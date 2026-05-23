@@ -52,5 +52,13 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+
+	<!-- Location permissions — required by geolocator + google_maps_flutter -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Smart Ride needs your location to set your pickup and drop-off points on the map.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Smart Ride needs your location to set your pickup and drop-off points on the map.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Smart Ride needs your location to set your pickup and drop-off points on the map.</string>
 </dict>
 </plist>

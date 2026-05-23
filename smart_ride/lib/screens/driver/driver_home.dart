@@ -221,6 +221,12 @@ class _DriverHomeState extends State<DriverHome>
               ],
             ),
           ),
+          // ── Emergency SOS button (left side, FAB is on right) ─────
+          Positioned(
+            bottom: 24,
+            left: 20,
+            child: const EmergencyButton(),
+          ),
           if (_busy)
             Container(
               color: Colors.black.withOpacity(0.18),

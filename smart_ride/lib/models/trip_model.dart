@@ -3,6 +3,8 @@ class TripModel {
   final int driverId;
   final String origin;
   final String destination;
+  final double driverRatingAverage;
+  final int driverRatingsCount;
   final DateTime departureAt;
   final int seatsTotal;
   final int seatsAvailable;
@@ -35,23 +37,16 @@ class TripModel {
     this.driverPhone,
     this.stops = const [],
     this.bookings = const [],
+    this.driverRatingAverage = 0.0,
+    this.driverRatingsCount = 0,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
     final driver = json['driver'] as Map<String, dynamic>?;
     final stopsJson = json['stops'] as List? ?? [];
     final bookingsJson = json['bookings'] as List? ?? [];
-
     final origin = (json['origin'] ?? '').toString();
     final destination = (json['destination'] ?? '').toString();
-
-    // The backend's trip_stops table stores origin + intermediates +
-    // destination (see TripController@store). For UI consumers we only
-    // want the intermediate stops here — origin/destination are already
-    // first-class fields. We also de-duplicate to be defensive against
-    // any double-seeding and to keep DropdownButton happy (Flutter's
-    // DropdownButton asserts that its current value matches exactly one
-    // item, so a duplicate stop would crash the screen).
     final allStops = stopsJson
         .map<String>((s) => (s is Map<String, dynamic>)
             ? (s['name'] ?? '').toString()
@@ -86,6 +81,10 @@ class TripModel {
       driverPhone: driver?['phone'],
       stops: intermediateStops,
       bookings: bookingsJson,
+      driverRatingAverage:
+          double.tryParse((driver?['rating_average'] ?? 0).toString()) ?? 0.0,
+      driverRatingsCount:
+          int.tryParse((driver?['ratings_count'] ?? 0).toString()) ?? 0,
     );
   }
 }

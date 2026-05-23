@@ -134,11 +134,17 @@ class TripSegmentationService
      * Build (or rebuild) the trip_segments rows from the trip's ordered
      * stops. Safe to call multiple times before any bookings exist.
      *
+     * @param  Trip               $trip
+     * @param  array<int, float>  $segmentPrices  Optional. Ordered prices
+     *         per segment. If provided, the i-th price is applied to the
+     *         i-th leg (e.g. [3.0, 2.0] for Irbid→Jarash=3, Jarash→Amman=2).
+     *         Must have exactly (stops - 1) elements if supplied.
+     *         Falls back to price_per_seat when omitted or wrong length.
      * @return Collection<int, TripSegment>
      */
-    public function generateSegments(Trip $trip): Collection
+    public function generateSegments(Trip $trip, array $segmentPrices = []): Collection
     {
-        return DB::transaction(function () use ($trip) {
+        return DB::transaction(function () use ($trip, $segmentPrices) {
             // Refuse to regenerate if there are already active bookings,
             // since that would invalidate seat math.
             $hasActive = $trip->bookings()
@@ -164,7 +170,15 @@ class TripSegmentationService
             $totalMinutes = $this->estimateTotalMinutes($trip);
             $segmentMinutes = max(1, intdiv($totalMinutes, $count));
 
+            // Validate provided prices array length.
+            $usePrices = (count($segmentPrices) === $count);
+
             for ($i = 0; $i < $count; $i++) {
+                // Use the driver-supplied price when available and valid (>= 0).
+                $price = ($usePrices && isset($segmentPrices[$i]) && (float)$segmentPrices[$i] >= 0)
+                    ? (float) $segmentPrices[$i]
+                    : $this->calculateSegmentPrice($trip);
+
                 TripSegment::create([
                     'trip_id'           => $trip->id,
                     'order_index'       => $i,
@@ -172,7 +186,7 @@ class TripSegmentationService
                     'end_stop'          => $points[$i + 1],
                     'seats_total'       => $trip->seats_total,
                     'seats_available'   => $trip->seats_total,
-                    'price'             => $this->calculateSegmentPrice($trip),
+                    'price'             => $price,
                     'estimated_minutes' => $segmentMinutes,
                 ]);
             }
@@ -245,7 +259,10 @@ class TripSegmentationService
         Trip $trip,
         string $from,
         string $to,
-        int $seats
+        int $seats,
+        ?string $locationArea     = null,
+        ?string $locationStreet   = null,
+        ?string $locationBuilding = null
     ): Booking {
         if ($passenger->role !== 'passenger') {
             throw new InvalidArgumentException('Only passengers can book.');
@@ -254,7 +271,7 @@ class TripSegmentationService
             throw new InvalidArgumentException('Seats must be positive.');
         }
 
-        return DB::transaction(function () use ($passenger, $trip, $from, $to, $seats) {
+        return DB::transaction(function () use ($passenger, $trip, $from, $to, $seats, $locationArea, $locationStreet, $locationBuilding) {
 
             // Lock the relevant segments to prevent over-booking races.
             $route = TripSegment::where('trip_id', $trip->id)
@@ -300,16 +317,33 @@ class TripSegmentationService
                 $seg->reserveSeats($seats);
             }
 
-            $totalPrice = $sub->sum(fn ($s) => (float) $s->price) * $seats;
+            // Keep trips.seats_available = min(segment seats_available) so
+            // the simple BookingController path sees an accurate display counter.
+            $minAvail = TripSegment::where('trip_id', $trip->id)->min('seats_available');
+            $trip->update(['seats_available' => $minAvail]);
+
+            $tripPrice = round($sub->sum(fn ($s) => (float) $s->price) * $seats, 2);
+
+            // ── No-show debt: roll outstanding balance into this booking ──
+            $debtCarried     = 0.00;
+            $passengerBalance = (float) $passenger->balance;
+            if ($passengerBalance < 0) {
+                $debtCarried = round(abs($passengerBalance), 2);
+                $tripPrice   = round($tripPrice + $debtCarried, 2);
+            }
 
             $booking = Booking::create([
-                'trip_id'      => $trip->id,
-                'passenger_id' => $passenger->id,
-                'pickup_stop'  => $from,
-                'dropoff_stop' => $to,
-                'seats'        => $seats,
-                'total_price'  => $totalPrice,
-                'status'       => 'pending',
+                'trip_id'          => $trip->id,
+                'passenger_id'     => $passenger->id,
+                'pickup_stop'      => $from,
+                'dropoff_stop'     => $to,
+                'seats'            => $seats,
+                'total_price'      => $tripPrice,
+                'debt_carried'     => $debtCarried,
+                'status'           => 'pending',
+                'location_area'     => $locationArea,
+                'location_street'   => $locationStreet,
+                'location_building' => $locationBuilding,
             ]);
 
             // Pivot rows so we know exactly which legs the booking holds.
@@ -338,6 +372,13 @@ class TripSegmentationService
             );
         }
 
+        // Cannot cancel after the passenger has already checked in
+        if ($booking->is_checked_in) {
+            throw new InvalidArgumentException(
+                'You cannot cancel a booking after you have already checked in.'
+            );
+        }
+
         return DB::transaction(function () use ($booking) {
             $segments = $booking->segments()->lockForUpdate()->get();
             foreach ($segments as $seg) {
@@ -345,6 +386,21 @@ class TripSegmentationService
                 $seats = (int) $seg->pivot->seats;
                 $seg->releaseSeats($seats);
             }
+
+            // Re-sync the trip-level display counter.
+            $minAvail = TripSegment::where('trip_id', $booking->trip_id)->min('seats_available');
+            if ($minAvail !== null) {
+                $booking->trip()->update(['seats_available' => $minAvail]);
+            }
+
+            // ── Debt re-application on cancellation ───────────────────
+            // If the booking was accepted (debt already cleared from balance)
+            // but now the passenger cancels, put the debt back because
+            // they are no longer paying it through this booking.
+            if ($booking->status === 'accepted' && (float) $booking->debt_carried > 0) {
+                $booking->passenger()->first()->decrement('balance', (float) $booking->debt_carried);
+            }
+
             $booking->status = 'cancelled';
             $booking->save();
             return $booking->fresh('segments');

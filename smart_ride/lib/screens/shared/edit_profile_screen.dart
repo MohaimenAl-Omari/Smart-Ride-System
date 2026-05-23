@@ -7,9 +7,6 @@ import '../../core/localization.dart';
 import '../../controllers/auth_controller.dart';
 import '../../models/user-model.dart';
 
-/// Lets the signed-in user update name, email, phone, city, password
-/// and profile image. The save action posts a multipart request to
-/// `POST /api/profile` and returns the updated UserModel.
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
   const EditProfileScreen({super.key, required this.user});

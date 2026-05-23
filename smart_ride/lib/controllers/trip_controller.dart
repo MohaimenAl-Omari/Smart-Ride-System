@@ -69,6 +69,9 @@ class TripController {
     String? carPlate,
     String? notes,
     List<String> stops = const [],
+    // F1/F8 — Per-segment prices, one per consecutive stop pair.
+    // e.g. [3.0, 2.0] means Irbid→Jarash = 3 JOD, Jarash→Amman = 2 JOD.
+    List<double> segmentPrices = const [],
   }) async {
     final body = <String, dynamic>{
       'origin': origin,
@@ -81,6 +84,7 @@ class TripController {
       if (carPlate != null && carPlate.isNotEmpty) 'car_plate': carPlate,
       if (notes != null && notes.isNotEmpty) 'notes': notes,
       if (stops.isNotEmpty) 'stops': stops,
+      if (segmentPrices.isNotEmpty) 'segment_prices': segmentPrices,
     };
 
     final res = await http.post(

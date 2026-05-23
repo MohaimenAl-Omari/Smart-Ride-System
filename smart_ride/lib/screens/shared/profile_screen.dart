@@ -6,9 +6,11 @@ import '../../models/user-model.dart';
 import '../../controllers/auth_controller.dart';
 import '../driver/driver_history_screen.dart';
 import '../passenger/passenger_history_screen.dart';
+import 'about_screen.dart';
 import 'contact_us_screen.dart';
 import 'edit_profile_screen.dart';
 import 'login_screen.dart';
+import 'privacy_policy_screen.dart';
 
 
 class ProfileScreen extends StatefulWidget {
@@ -45,6 +47,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ContactUsScreen(user: _user)),
+    );
+  }
+
+  void _openHelpCenter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ContactUsScreen(user: _user)),
+    );
+  }
+
+  void _openPrivacyPolicy() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+    );
+  }
+
+  void _openAbout() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AboutScreen()),
     );
   }
 
@@ -120,10 +143,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _section(s.support, [
                         _actionRow(Icons.support_agent_rounded, s.contactUs,
                             _openContact),
-                        _linkRow(Icons.help_outline_rounded, s.helpCenter),
-                        _linkRow(Icons.policy_outlined, s.termsPrivacy),
-                        _linkRow(Icons.info_outline_rounded,
-                            s.aboutSmartRide),
+                        _actionRow(Icons.help_outline_rounded, s.helpCenter,
+                            _openHelpCenter),
+                        _actionRow(Icons.policy_outlined, s.termsPrivacy,
+                            _openPrivacyPolicy),
+                        _actionRow(Icons.info_outline_rounded,
+                            s.aboutSmartRide, _openAbout),
                       ]),
                       const SizedBox(height: 18),
                       SecondaryButton(

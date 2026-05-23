@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../../core/constant.dart';
 import '../../core/localization.dart';
 import '../../models/user-model.dart';
 import '../../models/trip_model.dart';
 import '../../controllers/trip_controller.dart';
 import '../../controllers/booking_controller.dart';
+import '../shared/driver_profile_screen.dart';
+import 'segment_booking_screen.dart';
 
 class TripDetailsScreen extends StatefulWidget {
   final UserModel user;
@@ -61,22 +64,13 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     if (res.success) Navigator.pop(context);
   }
 
-  /// Compute the segment range price between selected pickup and drop-off
-  /// using the simple "per-seat / total stops" segmentation rule.
-  double _segmentPrice(TripModel t) {
-    final ordered = [t.origin, ...t.stops, t.destination];
+  /// Returns true when the passenger has chosen stops that differ from the
+  /// full route (origin → destination). For partial routes the exact price is
+  /// only known after SegmentBookingScreen queries the per-segment API data.
+  bool _isPartialRoute(TripModel t) {
     final from = _pickupStop ?? t.origin;
     final to = _dropoffStop ?? t.destination;
-    final iFrom = ordered.indexOf(from);
-    final iTo = ordered.indexOf(to);
-    if (iFrom < 0 || iTo < 0 || iTo <= iFrom) {
-      return t.pricePerSeat;
-    }
-    final segments = iTo - iFrom;
-    final totalSegments = ordered.length - 1;
-    if (totalSegments <= 0) return t.pricePerSeat;
-    final ratio = segments / totalSegments;
-    return double.parse((t.pricePerSeat * ratio).toStringAsFixed(2));
+    return from != t.origin || to != t.destination;
   }
 
   @override
@@ -128,7 +122,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
         '${dt.day}/${dt.month}/${dt.year}  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     final maxSeats = t.seatsAvailable > 0 ? t.seatsAvailable : 1;
     final stopsForPicker = ['(none)', t.origin, ...t.stops, t.destination];
-    final segPrice = _segmentPrice(t);
 
     return Column(
       children: [
@@ -146,9 +139,9 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
               if (t.notes != null && t.notes!.isNotEmpty) _notesCard(t),
               if (t.notes != null && t.notes!.isNotEmpty)
                 const SizedBox(height: 12),
-              _bookingPanel(t, maxSeats, stopsForPicker, segPrice),
+              _bookingPanel(t, maxSeats, stopsForPicker),
               const SizedBox(height: 18),
-              _bookButton(t, segPrice),
+              _bookButton(t),
             ],
           ),
         ),
@@ -311,46 +304,102 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
   }
 
   Widget _driverCard(TripModel t) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: AppDecor.card(),
-      child: Row(
-        children: [
-          InitialAvatar(name: t.driverName!, size: 46),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(t.driverName!,
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text(
-                  [t.carModel, t.carPlate]
-                      .where((e) => e != null && e.isNotEmpty)
-                      .join(' · '),
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 12),
-                ),
-              ],
-            ),
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DriverProfileScreen(
+            driverId: t.driverId,
+            driverName: t.driverName ?? '',
+            viewer: widget.user,
           ),
-          if (t.driverPhone != null)
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: AppColors.emeraldSoft,
-                border: Border.all(color: AppColors.emerald.withOpacity(0.4)),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: AppDecor.card(),
+        child: Row(
+          children: [
+            InitialAvatar(name: t.driverName!, size: 46),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          t.driverName!,
+                          style: const TextStyle(
+                              color: AppColors.primaryDark,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.primaryDark),
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded,
+                          color: AppColors.textMuted, size: 18),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  // Star rating row
+                  if (t.driverRatingsCount > 0) ...[
+                    Row(
+                      children: [
+                        RatingBarIndicator(
+                          rating: t.driverRatingAverage,
+                          itemBuilder: (_, __) => const Icon(
+                              Icons.star_rounded,
+                              color: AppColors.amber),
+                          itemCount: 5,
+                          itemSize: 14,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${t.driverRatingAverage.toStringAsFixed(1)}  (${t.driverRatingsCount})',
+                          style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                  ] else ...[
+                    Text(
+                      S.of(context).noRatingsYet,
+                      style: const TextStyle(
+                          color: AppColors.textMuted, fontSize: 11.5),
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                  Text(
+                    [t.carModel, t.carPlate]
+                        .where((e) => e != null && e.isNotEmpty)
+                        .join(' · '),
+                    style: const TextStyle(
+                        color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.phone_rounded,
-                  color: AppColors.emerald, size: 16),
             ),
-        ],
+            if (t.driverPhone != null)
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.emeraldSoft,
+                  border:
+                      Border.all(color: AppColors.emerald.withOpacity(0.4)),
+                ),
+                child: const Icon(Icons.phone_rounded,
+                    color: AppColors.emerald, size: 16),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -396,9 +445,10 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     );
   }
 
-  Widget _bookingPanel(TripModel t, int maxSeats, List<String> stopsForPicker,
-      double segPrice) {
+  Widget _bookingPanel(
+      TripModel t, int maxSeats, List<String> stopsForPicker) {
     final s = S.of(context);
+    final partial = _isPartialRoute(t);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: AppDecor.card(),
@@ -435,33 +485,74 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 (v) => setState(() => _dropoffStop = v == '(none)' ? null : v)),
           ],
           const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.payments_rounded,
-                    color: AppColors.primaryDark, size: 18),
-                const SizedBox(width: 8),
-                Text(s.total,
+          // ── Price display ─────────────────────────────────────────
+          // For the full route we show the exact price per seat × seats.
+          // For a partial route the real price is per-segment and only
+          // known after SegmentBookingScreen fetches API data, so we
+          // show an "exact price at checkout" notice instead of a
+          // potentially wrong proportional estimate.
+          if (!partial)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.payments_rounded,
+                      color: AppColors.primaryDark, size: 18),
+                  const SizedBox(width: 8),
+                  Text(s.total,
+                      style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  Text(
+                    '${(_seats * t.pricePerSeat).toStringAsFixed(2)} ${s.currency}',
                     style: const TextStyle(
                         color: AppColors.primaryDark,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700)),
-                const Spacer(),
-                Text(
-                  '${(_seats * segPrice).toStringAsFixed(2)} ${s.currency}',
-                  style: const TextStyle(
-                      color: AppColors.primaryDark,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800),
-                ),
-              ],
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded,
+                      color: AppColors.primaryDark, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(s.priceAtCheckout,
+                            style: const TextStyle(
+                                color: AppColors.primaryDark,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700)),
+                        Text(s.priceAtCheckoutSub,
+                            style: const TextStyle(
+                                color: AppColors.primaryDark,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -547,10 +638,9 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     );
   }
 
-  Widget _bookButton(TripModel t, double segPrice) {
+  Widget _bookButton(TripModel t) {
     final s = S.of(context);
-    final disabled =
-        _booking || t.status != 'scheduled' || t.seatsAvailable < 1;
+    final disabled = t.status != 'scheduled' || t.seatsAvailable < 1;
     final label = t.seatsAvailable < 1
         ? s.soldOut
         : t.status != 'scheduled'
@@ -559,9 +649,22 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     return PrimaryButton(
       label: label,
       icon: Icons.lock_outline_rounded,
-      loading: _booking,
+      loading: false,
       height: 54,
-      onTap: disabled ? null : _book,
+      onTap: disabled
+          ? null
+          : () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SegmentBookingScreen(
+                    user:   widget.user,
+                    tripId: widget.tripId,
+                    from:   _pickupStop  ?? t.origin,
+                    to:     _dropoffStop ?? t.destination,
+                    seats:  _seats,
+                  ),
+                ),
+              ),
     );
   }
 }

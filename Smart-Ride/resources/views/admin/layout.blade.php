@@ -64,7 +64,7 @@
                             ['route' => 'admin.users',           'label' => 'Users',             'icon' => 'users'],
                             ['route' => 'admin.trips',           'label' => 'Trips',             'icon' => 'route'],
                             ['route' => 'admin.bookings',        'label' => 'Bookings',          'icon' => 'ticket'],
-                            ['route' => 'admin.contact',         'label' => 'Reports',           'icon' => 'mail'],
+                            ['route' => 'admin.contact',         'label' => 'Help Center',       'icon' => 'mail'],
                         ];
                     @endphp
 

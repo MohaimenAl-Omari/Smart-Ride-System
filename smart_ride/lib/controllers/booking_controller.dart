@@ -87,9 +87,6 @@ class BookingController {
     return res.statusCode == 200 && data['status'] == true;
   }
 
-  /// F7 — Calls the passenger check-in endpoint. The server validates
-  /// the time window (60min before → 30min after departure) and that the
-  /// booking is in `accepted` state, then stamps `checked_in_at`.
   Future<BookingResult> checkIn(String token, int bookingId) async {
     final res = await http.post(
       Uri.parse('$baseUrl/bookings/$bookingId/checkin'),
@@ -101,6 +98,20 @@ class BookingController {
       success: ok,
       message: data['message']?.toString() ??
           (ok ? 'Checked in.' : 'Check-in failed.'),
+    );
+  }
+
+  Future<BookingResult> driverCheckIn(String token, int bookingId) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/driver/bookings/$bookingId/checkin'),
+      headers: _headers(token),
+    );
+    final data = jsonDecode(res.body);
+    final ok = res.statusCode == 200 && data['status'] == true;
+    return BookingResult(
+      success: ok,
+      message: data['message']?.toString() ??
+          (ok ? 'Passenger checked in.' : 'Check-in failed.'),
     );
   }
 }

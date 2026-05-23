@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/constant.dart';
 
-/// Generic API result used by the simpler controllers below.
 class ApiResult<T> {
   final bool success;
   final String message;
@@ -10,7 +9,6 @@ class ApiResult<T> {
   ApiResult({required this.success, required this.message, this.data});
 }
 
-/// Submits Contact Us messages to the Laravel backend.
 class ContactController {
   Future<ApiResult<void>> send({
     required String token,
@@ -84,8 +82,6 @@ class TripRatingModel {
     );
   }
 }
-
-/// Aggregated driver rating with the recent reviews.
 class DriverRatingsResponse {
   final double average;
   final int count;
@@ -102,9 +98,6 @@ class RatingController {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       };
-
-  /// Submit a 1..5 star rating for a completed booking. Returns the
-  /// updated driver aggregates (average + count) on success.
   Future<ApiResult<Map<String, dynamic>>> rate({
     required String token,
     required int bookingId,

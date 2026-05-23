@@ -1,6 +1,3 @@
-// HTTP client for the Ride Segmentation feature. Talks to the new
-// Laravel endpoints under /api/segments and /api/trips/{id}/segments.
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/constant.dart';
@@ -17,7 +14,6 @@ class SegmentController {
         'Content-Type': 'application/json',
       };
 
-  /// GET /trips/{trip}/segments
   Future<List<TripSegmentModel>> listSegments(
       String token, int tripId) async {
     final res = await http.get(
@@ -34,7 +30,6 @@ class SegmentController {
     return const [];
   }
 
-  /// GET /segments/search?from=&to=&seats=
   Future<List<SegmentSearchResult>> search({
     required String token,
     required String from,
@@ -60,7 +55,6 @@ class SegmentController {
     return const [];
   }
 
-  /// POST /segments/book
   Future<SegmentActionResult> book({
     required String token,
     required int tripId,
@@ -68,15 +62,47 @@ class SegmentController {
     required String to,
     required int seats,
   }) async {
+    return bookWithLocation(
+      token:  token,
+      tripId: tripId,
+      from:   from,
+      to:     to,
+      seats:  seats,
+    );
+  }
+
+  /// Books a segment and saves the passenger's three-field location.
+  Future<SegmentActionResult> bookWithLocation({
+    required String token,
+    required int tripId,
+    required String from,
+    required String to,
+    required int seats,
+    String? locationArea,
+    String? locationStreet,
+    String? locationBuilding,
+  }) async {
+    final payload = <String, dynamic>{
+      'trip_id': tripId,
+      'from':    from,
+      'to':      to,
+      'seats':   seats,
+    };
+
+    if (locationArea != null && locationArea.isNotEmpty) {
+      payload['location_area'] = locationArea;
+    }
+    if (locationStreet != null && locationStreet.isNotEmpty) {
+      payload['location_street'] = locationStreet;
+    }
+    if (locationBuilding != null && locationBuilding.isNotEmpty) {
+      payload['location_building'] = locationBuilding;
+    }
+
     final res = await http.post(
       Uri.parse('$baseUrl/segments/book'),
       headers: _jsonHeaders(token),
-      body: jsonEncode({
-        'trip_id': tripId,
-        'from': from,
-        'to': to,
-        'seats': seats,
-      }),
+      body:    jsonEncode(payload),
     );
     final data = jsonDecode(res.body);
     final ok = res.statusCode == 200 && data['status'] == true;
@@ -88,7 +114,6 @@ class SegmentController {
     );
   }
 
-  /// POST /segments/bookings/{booking}/cancel
   Future<SegmentActionResult> cancel({
     required String token,
     required int bookingId,
@@ -106,7 +131,26 @@ class SegmentController {
     );
   }
 
-  /// POST /driver/trips/{trip}/stops
+  /// Records the passenger's chosen payment method (cash / card / wallet)
+  /// against the booking on the server.
+  Future<bool> savePaymentMethod({
+    required String token,
+    required int bookingId,
+    required String method, // 'cash' | 'card' | 'wallet'
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/bookings/$bookingId/payment-method'),
+        headers: _jsonHeaders(token),
+        body: jsonEncode({'payment_method': method}),
+      );
+      final data = jsonDecode(res.body);
+      return res.statusCode == 200 && data['status'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<SegmentActionResult> addStop({
     required String token,
     required int tripId,
@@ -115,7 +159,7 @@ class SegmentController {
     final res = await http.post(
       Uri.parse('$baseUrl/driver/trips/$tripId/stops'),
       headers: _jsonHeaders(token),
-      body: jsonEncode({'name': name}),
+      body:    jsonEncode({'name': name}),
     );
     final data = jsonDecode(res.body);
     final ok = res.statusCode == 200 && data['status'] == true;
@@ -126,7 +170,6 @@ class SegmentController {
     );
   }
 
-  /// POST /driver/trips/{trip}/segments/generate
   Future<SegmentActionResult> generate({
     required String token,
     required int tripId,

@@ -6,13 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-/**
- * A single leg of a multi-stop trip (e.g. Irbid → Amman).
- *
- * Encapsulates per-segment seat tracking, price and estimated time so
- * passengers can book overlapping portions of the same physical ride
- * without conflicting with each other.
- */
 class TripSegment extends Model
 {
     protected $fillable = [

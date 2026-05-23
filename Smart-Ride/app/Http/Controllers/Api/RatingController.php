@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\FcmService;
 use App\Models\Booking;
 use App\Models\TripRating;
 use App\Models\User;
@@ -82,8 +83,13 @@ class RatingController extends Controller
             'review'       => $request->review,
         ]);
 
-        // Return the updated driver aggregates for instant UI refresh
+        // Return the updated driver aggregates for instant UI refresh.
         $driver = User::find($booking->trip->driver_id);
+
+        // Notify the driver about the new rating.
+        if ($driver) {
+            FcmService::driverRated($driver, (int) $request->stars, $user->name);
+        }
 
         return response()->json([
             'status'  => true,

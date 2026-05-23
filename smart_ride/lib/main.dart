@@ -19,8 +19,6 @@ class SmartRideApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Rebuild MaterialApp whenever the language changes so the entire
-    // tree picks up the new locale (and RTL flips automatically).
     return ValueListenableBuilder<String>(
       valueListenable: LangController.instance.code,
       builder: (context, code, _) {
@@ -46,8 +44,6 @@ class SmartRideApp extends StatelessWidget {
   }
 }
 
-/// Root gate that decides which screen the app should open with based on
-/// whether there's a stored user session in [SessionService].
 class _SessionGate extends StatefulWidget {
   const _SessionGate();
 

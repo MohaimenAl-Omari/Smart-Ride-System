@@ -139,6 +139,26 @@ class AuthController {
     }
   }
 
+  /// Fetches the latest user data from `GET /api/me`.
+  /// Returns an updated [UserModel] (with fresh balance, ratings, etc.)
+  /// or null if the call fails.
+  Future<UserModel?> getMe(String token) async {
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/me'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200 && data['status'] == true) {
+        return UserModel.fromJson(data['user'], token);
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<bool> logout(String token) async {
     final url = Uri.parse('$baseUrl/logout');
     bool ok = false;

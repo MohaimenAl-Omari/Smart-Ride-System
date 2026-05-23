@@ -98,7 +98,9 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
         now.isAfter(dt.subtract(const Duration(minutes: 60))) &&
         now.isBefore(dt.add(const Duration(minutes: 30)));
 
-    final canCancel = b.status == 'pending' || b.status == 'accepted';
+    // Cannot cancel once checked in (enforced on both client and server)
+    final canCancel = !_checkedIn &&
+        (b.status == 'pending' || b.status == 'accepted');
     final canRate = b.status == 'completed' && !_ratingSent;
 
     return Scaffold(

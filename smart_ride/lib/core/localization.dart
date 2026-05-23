@@ -574,4 +574,271 @@ class S {
         return s;
     }
   }
+
+  // ---------------------------------------------------------------
+  // Notifications (enhanced)
+  // ---------------------------------------------------------------
+  String get allNotifs => _t('All', 'الكل');
+  String get unreadNotifs => _t('Unread', 'غير مقروء');
+  String get clearAll => _t('Clear all', 'مسح الكل');
+  String get clearedAll => _t('All notifications cleared', 'تم مسح جميع الإشعارات');
+  String get nTripCompletedTitle => _t('Trip completed', 'اكتملت الرحلة');
+  String get nTripCompletedBody => _t(
+      'Your trip Amman → Irbid was completed. Thank you for riding with us!',
+      'اكتملت رحلتك عمّان → إربد. شكراً لاستخدامك سمارت رايد!');
+  String get nCancelledTitle => _t('Booking cancelled', 'تم إلغاء الحجز');
+  String get nCancelledBody => _t(
+      'A passenger cancelled their booking on your trip. Their seat is now available.',
+      'ألغى راكب حجزه على رحلتك. المقعد متاح الآن.');
+  String get nWalletCreditTitle => _t('Wallet credited', 'تم شحن المحفظة');
+  String get nWalletCreditBody => _t(
+      '12.50 JD was added to your wallet for the completed Zarqa → Amman trip.',
+      'تمت إضافة 12.50 د.أ إلى محفظتك لرحلة الزرقاء → عمّان المكتملة.');
+  String get nCheckinTitle => _t('Passenger checked in', 'سجّل راكب وصوله');
+  String get nCheckinBody => _t(
+      'A passenger checked in for your trip at Tabarbour stop.',
+      'سجّل راكب وصوله لرحلتك عند محطة تبربور.');
+  String get nPromoTitle => _t('Special offer', 'عرض خاص');
+  String get nPromoBody => _t(
+      'Ride 3 times this week and get 20% off your next booking!',
+      'اركب 3 مرات هذا الأسبوع واحصل على خصم 20% على حجزك القادم!');
+  String get nTripReminderTitle => _t('Trip tomorrow', 'رحلة غداً');
+  String get nTripReminderBody => _t(
+      'Don\'t forget: your trip Amman → Zarqa departs at 08:00 tomorrow.',
+      'لا تنسَ: رحلتك عمّان → الزرقاء تنطلق في 08:00 غداً.');
+
+  // Notification category chip labels
+  String get nCatBooking => _t('Booking', 'حجز');
+  String get nCatTrip => _t('Trip', 'رحلة');
+  String get nCatPayment => _t('Payment', 'دفع');
+  String get nCatPromo => _t('Offer', 'عرض');
+  String get nCatSystem => _t('System', 'نظام');
+
+  // ---------------------------------------------------------------
+  // Payment simulation
+  // ---------------------------------------------------------------
+  String get paymentTitle => _t('Complete payment', 'إتمام الدفع');
+  String get paymentMethod => _t('Payment method', 'طريقة الدفع');
+  String get payByCash => _t('Pay by cash', 'الدفع نقداً');
+  String get payByCard => _t('Pay by card', 'الدفع ببطاقة');
+  String get payByWallet => _t('Smart Ride wallet', 'محفظة سمارت رايد');
+  String get cashCaption => _t('Pay the driver directly on board', 'ادفع للسائق مباشرة في السيارة');
+  String get cardCaption => _t('Visa / Mastercard — secure encrypted', 'فيزا / ماستركارد — مشفّر وآمن');
+  String get walletCaption => _t('Use your Smart Ride wallet balance', 'استخدم رصيد محفظتك');
+  String get cardNumber => _t('Card number', 'رقم البطاقة');
+  String get cardHolder => _t('Cardholder name', 'اسم حامل البطاقة');
+  String get expiryDate => _t('Expiry (MM/YY)', 'تاريخ الانتهاء (شهر/سنة)');
+  String get cvv => _t('CVV', 'رمز الأمان');
+  String get walletBalance => _t('Wallet balance', 'رصيد المحفظة');
+  String get insufficientBalance => _t('Insufficient balance', 'رصيد غير كافٍ');
+  String get payNow => _t('Pay now', 'ادفع الآن');
+  String get processing => _t('Processing payment…', 'جارٍ معالجة الدفع…');
+  String get paymentSuccess => _t('Payment successful!', 'تم الدفع بنجاح!');
+  String get paymentSuccessBody => _t(
+      'Your booking is confirmed. Have a great trip!',
+      'تم تأكيد حجزك. رحلة موفّقة!');
+  String get paymentFailed => _t('Payment failed', 'فشل الدفع');
+  String get paymentFailedBody => _t(
+      'Something went wrong. Please try again or use a different method.',
+      'حدث خطأ ما. يرجى المحاولة مجدداً أو استخدام طريقة دفع مختلفة.');
+  String get tryAgain => _t('Try again', 'حاول مجدداً');
+  String get orderSummary => _t('Order summary', 'ملخص الطلب');
+  String get totalAmount => _t('Total amount', 'المبلغ الإجمالي');
+  String get securedBy => _t('Secured by Smart Ride Pay', 'مؤمَّن بواسطة سمارت رايد باي');
+  String get proceedToPayment => _t('Proceed to payment', 'المتابعة للدفع');
+  String get cashInstructions => _t(
+      'Pay the driver in cash when you board. Keep your booking confirmation ready.',
+      'ادفع للسائق نقداً عند الركوب. احتفظ بتأكيد الحجز جاهزاً.');
+  String get fillCardDetails => _t('Please fill in all card details', 'يرجى ملء جميع بيانات البطاقة');
+
+  // Payment processing step labels
+  String get payStep1 => _t('Connecting to payment gateway…', 'الاتصال ببوابة الدفع…');
+  String get payStep2 => _t('Verifying payment details…', 'التحقق من بيانات الدفع…');
+  String get payStep3 => _t('Securing transaction…', 'تأمين المعاملة…');
+  String get payStep4 => _t('Confirming booking…', 'تأكيد الحجز…');
+  String get paySimMode => _t('Simulation mode — demo card loaded', 'وضع المحاكاة — بطاقة تجريبية محملة');
+  String get paySimCard => _t(
+      'Card: 4242 4242 4242 4242  ·  Exp: 12/28  ·  CVV: 123',
+      'البطاقة: 4242 4242 4242 4242 · الانتهاء: 12/28 · CVV: 123');
+  String get greatThanks => _t('Great, thanks!', 'رائع، شكراً!');
+
+  // ---------------------------------------------------------------
+  // Privacy Policy
+  // ---------------------------------------------------------------
+  String get privacyPolicy => _t('Privacy Policy', 'سياسة الخصوصية');
+  String get privacyLastUpdated => _t('Last updated: May 2026', 'آخر تحديث: مايو 2026');
+  String get privacyIntroTitle => _t('Your privacy matters', 'خصوصيتك تهمنا');
+  String get privacyIntroBody => _t(
+      'Smart Ride is committed to protecting your personal information. This policy explains what we collect, why we collect it, and how we keep it safe.',
+      'تلتزم سمارت رايد بحماية معلوماتك الشخصية. توضّح هذه السياسة ما نجمعه، ولماذا نجمعه، وكيف نحافظ عليه.');
+  String get privacyCollectTitle => _t('What we collect', 'ما نجمعه');
+  String get privacyCollectBody => _t(
+      'We collect your name, phone, email, and location data necessary to match you with rides. Driver accounts additionally require identity and vehicle documents for verification.',
+      'نجمع اسمك ورقم هاتفك وبريدك الإلكتروني وبيانات الموقع اللازمة لمطابقتك مع الرحلات. تتطلب حسابات السائقين أيضاً مستندات هوية للتحقق.');
+  String get privacyUseTitle => _t('How we use it', 'كيف نستخدمه');
+  String get privacyUseBody => _t(
+      'Your data is used solely to operate the Smart Ride service: booking trips, processing payments, providing support, and improving safety. We never sell your data to third parties.',
+      'تُستخدم بياناتك حصراً لتشغيل خدمة سمارت رايد: حجز الرحلات، معالجة المدفوعات، تقديم الدعم، وتحسين السلامة. لا نبيع بياناتك لأي طرف ثالث.');
+  String get privacySharingTitle => _t('Data sharing', 'مشاركة البيانات');
+  String get privacySharingBody => _t(
+      'Limited trip details (pickup stop, seat count) are shared between matched drivers and passengers. Payment processing is handled by encrypted, PCI-compliant systems.',
+      'يتم مشاركة تفاصيل الرحلة المحدودة (محطة الصعود، عدد المقاعد) بين السائقين والركّاب المطابقين. تتم معالجة الدفع عبر أنظمة مشفّرة متوافقة مع معايير PCI.');
+  String get privacyRetentionTitle => _t('Data retention', 'الاحتفاظ بالبيانات');
+  String get privacyRetentionBody => _t(
+      'Trip and payment records are retained for 2 years for regulatory compliance. You may request deletion of your account and data at any time through the contact form.',
+      'يتم الاحتفاظ بسجلات الرحلات والمدفوعات لمدة عامين للامتثال التنظيمي. يمكنك طلب حذف حسابك وبياناتك في أي وقت من خلال نموذج التواصل.');
+  String get privacyRightsTitle => _t('Your rights', 'حقوقك');
+  String get privacyRightsBody => _t(
+      'You have the right to access, correct, or delete your personal data. Contact us at privacy@smartride.jo and we\'ll respond within 30 days.',
+      'يحق لك الوصول إلى بياناتك الشخصية أو تصحيحها أو حذفها. تواصل معنا على privacy@smartride.jo وسنردّ خلال 30 يوماً.');
+  String get privacySecurityTitle => _t('Security', 'الأمان');
+  String get privacySecurityBody => _t(
+      'All data is encrypted in transit (TLS 1.3) and at rest. We conduct regular security audits and our servers are hosted in ISO 27001-certified data centres.',
+      'جميع البيانات مشفّرة أثناء النقل (TLS 1.3) وأثناء التخزين. نجري عمليات تدقيق أمني منتظمة وخوادمنا مستضافة في مراكز بيانات معتمدة بمعيار ISO 27001.');
+  String get privacyContactUs => _t('Questions? Contact us', 'لأسئلتك، تواصل معنا');
+
+  // ---------------------------------------------------------------
+  // About Us
+  // ---------------------------------------------------------------
+  String get aboutUs => _t('About Smart Ride', 'حول سمارت رايد');
+  String get aboutTagline => _t(
+      'Smarter carpooling for Jordan\'s roads.',
+      'كاربول أذكى لطرق الأردن.');
+  String get aboutMissionTitle => _t('Our mission', 'مهمتنا');
+  String get aboutMissionBody => _t(
+      'Smart Ride was founded to make daily commuting across Jordanian cities affordable, flexible, and community-driven. We believe every seat in every car should count.',
+      'تأسّست سمارت رايد لجعل التنقل اليومي عبر المدن الأردنية ميسور التكلفة ومرناً وقائماً على المجتمع. نؤمن بأن كل مقعد في كل سيارة يجب أن يكون ذا قيمة.');
+  String get aboutHowTitle => _t('How it works', 'كيف يعمل');
+  String get aboutHowBody => _t(
+      'Drivers post trips with flexible stops. Passengers book individual segments — only the stops they need. Fares are split fairly, payments are held securely until the trip completes.',
+      'ينشر السائقون رحلات بمحطات مرنة. يحجز الركّاب مقاطع فردية — المحطات التي يحتاجونها فقط. تُوزَّع الأجور بعدالة، وتُحتجز المدفوعات بأمان حتى اكتمال الرحلة.');
+  String get aboutTeamTitle => _t('The team', 'الفريق');
+  String get aboutTeamBody => _t(
+      'We are a team of engineers and designers based in Amman, Jordan, passionate about sustainable urban mobility and building technology that serves real people.',
+      'نحن فريق من المهندسين والمصممين مقرّه عمّان، الأردن، شغوف بالتنقل الحضري المستدام وبناء تقنية تخدم الناس الحقيقيين.');
+  String get aboutVersionTitle => _t('Version', 'الإصدار');
+  String get aboutVersionBody => _t(
+      'Smart Ride v1.0 — built with Flutter & Laravel.',
+      'سمارت رايد v1.0 — مبني باستخدام Flutter و Laravel.');
+  String get aboutContactTitle => _t('Contact', 'تواصل');
+  String get aboutContactBody => _t(
+      'support@smartride.jo\n+962 6 000 0000\nAmman, Jordan',
+      'support@smartride.jo\n+962 6 000 0000\nعمّان، الأردن');
+  String get aboutSocial => _t('Follow us', 'تابعنا');
+  String get aboutStats1 => _t('10,000+\nPassengers', '+10,000\nراكب');
+  String get aboutStats2 => _t('2,500+\nDrivers', '+2,500\nسائق');
+  String get aboutStats3 => _t('50,000+\nTrips', '+50,000\nرحلة');
+
+  // ---------------------------------------------------------------
+  // Trip details — partial-route price notice
+  // ---------------------------------------------------------------
+  String get priceAtCheckout =>
+      _t('Exact price at checkout', 'السعر الدقيق عند الدفع');
+  String get priceAtCheckoutSub =>
+      _t('Shown in booking summary →', 'يظهر في ملخص الحجز →');
+
+  // ---------------------------------------------------------------
+  // Create trip — segment prices section
+  // ---------------------------------------------------------------
+  String get segmentPrices => _t('Segment Prices', 'أسعار المقاطع');
+  String get segmentPricesSub => _t(
+      'Enter the price from the start to each stop. '
+      'Example: A→B = 3 JD, A→C = 6 JD means the full trip costs 6 JD '
+      'and a passenger riding only A→B pays 3 JD.',
+      'أدخل السعر من البداية إلى كل محطة. مثال: أ→ب = 3 د.أ، أ→ج = 6 د.أ '
+      'يعني أن الرحلة الكاملة تكلف 6 د.أ وراكب يركب فقط أ→ب يدفع 3 د.أ.');
+  String get segPriceFirstLeg => _t('Price for this leg', 'سعر هذا الجزء');
+  String segPriceTotalFrom(String prevJd) =>
+      _t('Total from start (> $prevJd)', 'الإجمالي من البداية (> $prevJd)');
+  String segPriceGtZero(String label) => _t(
+      'Enter a price greater than 0 for: $label',
+      'أدخل سعراً أكبر من 0 لـ: $label');
+  String segPriceMustBeHigher(
+          String label, String prevLabel, String prevPrice) =>
+      _t(
+          '$label price must be higher than $prevLabel ($prevPrice JD)',
+          'سعر $label يجب أن يكون أعلى من $prevLabel ($prevPrice د.أ)');
+
+  // ---------------------------------------------------------------
+  // Segment booking screen
+  // ---------------------------------------------------------------
+  String get confirmBooking => _t('Confirm Booking', 'تأكيد الحجز');
+  String get yourRoute => _t('Your Route', 'مسارك');
+  String get yourRouteSub =>
+      _t('Segment breakdown and seat availability.', 'تفاصيل المقاطع وتوفر المقاعد.');
+  String get yourPickupAddress => _t('Your Pickup Address', 'عنوان الالتقاط');
+  String get yourPickupAddressSub =>
+      _t('Tell the driver exactly where to find you.', 'أخبر السائق بالضبط أين تتواجد.');
+  String get locationArea => _t('Area / Neighborhood', 'المنطقة / الحي');
+  String get areaRequired => _t('Area is required', 'المنطقة مطلوبة');
+  String get streetName => _t('Street Name', 'اسم الشارع');
+  String get buildingNumber => _t('Building Number', 'رقم المبنى');
+  String get noSegmentsAvailable =>
+      _t('No segments available', 'لا توجد مقاطع متاحة');
+  String get noSegmentsAvailableSub => _t(
+      'The driver has not set up segments for this trip yet.',
+      'لم يقم السائق بإعداد مقاطع لهذه الرحلة بعد.');
+  String get routeNotFound => _t('Route not found', 'المسار غير موجود');
+  String get routeNotFoundSub => _t(
+      'Could not match your selected stops to trip segments.',
+      'تعذّر مطابقة محطاتك المختارة مع مقاطع الرحلة.');
+  String get noSegmentsForRoute =>
+      _t('No segments found for this route', 'لا توجد مقاطع لهذا المسار');
+  String get enterPickupArea =>
+      _t('Enter your pickup area to continue', 'أدخل منطقة الالتقاط للمتابعة');
+  String get outstandingDebt => _t('+ Outstanding debt', '+ ديون مستحقة');
+  String get grandTotal => _t('Grand Total', 'المجموع الكلي');
+  String get tripCost => _t('Trip cost', 'تكلفة الرحلة');
+
+  // ---------------------------------------------------------------
+  // About screen (graduation project version)
+  // ---------------------------------------------------------------
+  String get aboutAppTitle => _t('About the App', 'حول التطبيق');
+  String get aboutAppBody => _t(
+      'Smart Ride is a modern carpooling platform built to connect passengers '
+      'with trusted drivers across Jordan. Whether you\'re commuting between '
+      'cities or just need a reliable ride, Smart Ride makes shared '
+      'transportation simple, affordable, and safe.',
+      'سمارت رايد منصة كاربول حديثة مبنية لربط الركّاب بسائقين موثوقين في '
+      'جميع أنحاء الأردن. سواء كنت تتنقل بين المدن أو تحتاج إلى رحلة موثوقة، '
+      'تجعل سمارت رايد وسائل النقل المشترك بسيطة وميسورة وآمنة.');
+  String get aboutKeyFeatures => _t('Key Features', 'المميزات الرئيسية');
+  String get aboutFeat1Title => _t('Multi-Stop Trips', 'رحلات متعددة المحطات');
+  String get aboutFeat1Body =>
+      _t('Book segments of any trip between any two stops.',
+          'احجز مقاطع أي رحلة بين أي محطتين.');
+  String get aboutFeat2Title => _t('Precise Pickup', 'الالتقاط الدقيق');
+  String get aboutFeat2Body =>
+      _t('Share your exact street and building for easy pickup.',
+          'شارك شارعك ومبناك بالضبط لسهولة الالتقاط.');
+  String get aboutFeat3Title => _t('Flexible Payments', 'مدفوعات مرنة');
+  String get aboutFeat3Body =>
+      _t('Pay by cash, card, or your in-app wallet.',
+          'ادفع نقداً أو ببطاقة أو بمحفظتك داخل التطبيق.');
+  String get aboutFeat4Title => _t('Live Notifications', 'إشعارات فورية');
+  String get aboutFeat4Body => _t(
+      'Instant push alerts for bookings, acceptance, and cancellations.',
+      'تنبيهات فورية للحجوزات والقبول والإلغاء.');
+  String get aboutFeat5Title => _t('Verified Drivers', 'سائقون موثّقون');
+  String get aboutFeat5Body => _t(
+      'All drivers are reviewed and approved by the admin team.',
+      'جميع السائقين مراجَعون ومعتمَدون من قِبَل فريق الإدارة.');
+  String get aboutDevTeam => _t('Development Team', 'فريق التطوير');
+  String get aboutGradProjectBody => _t(
+      'Smart Ride was designed and developed as part of a graduation project, '
+      'combining a Flutter mobile app with a Laravel-powered backend to deliver '
+      'a full-stack carpooling solution.',
+      'صُمِّمت سمارت رايد وطُوِّرت كجزء من مشروع تخرج، تجمع بين تطبيق '
+      'Flutter للهاتف المحمول وخادم مبني على Laravel لتقديم حل متكامل للكاربول.');
+  String get aboutDevRole =>
+      _t('Mobile & Backend Development', 'تطوير التطبيق والخادم');
+  String get aboutDevName => _t('Smart Ride Dev Team', 'فريق سمارت رايد');
+  String get aboutProjectType => _t('Project Type', 'نوع المشروع');
+  String get aboutProjectTypeName =>
+      _t('Graduation Project', 'مشروع التخرج');
+  String get aboutPlatformType => _t('Platform', 'المنصة');
+  String get aboutVersionDisplay => _t('Version 1.0.0', 'الإصدار 1.0.0');
+  String aboutCopyright(int year) => _t(
+      '© $year Smart Ride. All rights reserved.',
+      '© $year سمارت رايد. جميع الحقوق محفوظة.');
 }

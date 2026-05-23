@@ -25,6 +25,7 @@ class User extends Authenticatable
         'image',
         'is_verified',
         'is_active',
+        'balance',
     ];
 
     protected $hidden = [
@@ -36,6 +37,7 @@ class User extends Authenticatable
     protected $casts = [
         'is_verified' => 'boolean',
         'is_active'   => 'boolean',
+        'balance'     => 'decimal:2',
     ];
 
     /**
