@@ -201,11 +201,11 @@ class BookingController extends Controller
      * Two paths:
      *
      * A) The booking came via SegmentController (has booking_segments pivot rows).
-     *    → Seats were already reserved per-segment when the passenger booked.
-     *    → Just flip status to 'accepted'. Update trips.seats_available for display.
+     *    → Seats are reserved NOW at acceptance (not pre-reserved at booking time).
+     *    → Check each covered segment has capacity, then decrement.
      *
      * B) The booking came via BookingController::store() (no pivot rows).
-     *    → Check segment availability now (for the booking's specific route).
+     *    → Derive covered segments from pickup/dropoff stops.
      *    → Reserve segment seats, or fall back to the global counter if no segments.
      */
     public function accept(Request $request, Booking $booking)
@@ -232,13 +232,26 @@ class BookingController extends Controller
                     ->lockForUpdate()
                     ->get();
 
-                // Path A: already reserved via SegmentController
-                $alreadyReserved = $booking->segments()->exists();
+                // Path A: booking came via SegmentController (has pivot rows).
+                // Seats were NOT pre-reserved — reserve them now.
+                $hasPivotRows = $booking->segments()->exists();
 
-                if ($alreadyReserved) {
-                    // Nothing to reserve — seats were held when the passenger
-                    // submitted the request.  Just sync the display counter.
-                    $minAvail = $allSegs->min('seats_available');
+                if ($hasPivotRows) {
+                    $bookingSegIds = $booking->segments()->pluck('trip_segments.id')->toArray();
+                    $coveredSegs   = $allSegs->filter(fn ($s) => in_array($s->id, $bookingSegIds));
+
+                    foreach ($coveredSegs as $seg) {
+                        if ($seg->seats_available < $seats) {
+                            throw new \RuntimeException(
+                                "Not enough seats on {$seg->start_stop} → {$seg->end_stop} (seats may be full)"
+                            );
+                        }
+                    }
+                    foreach ($coveredSegs as $seg) {
+                        $seg->decrement('seats_available', $seats);
+                    }
+
+                    $minAvail = TripSegment::where('trip_id', $trip->id)->min('seats_available');
                     $trip->update(['seats_available' => $minAvail ?? $trip->seats_available]);
 
                 } elseif ($allSegs->isNotEmpty()) {
@@ -316,18 +329,8 @@ class BookingController extends Controller
         }
 
         DB::transaction(function () use ($booking) {
-            // Release segment seats that were pre-reserved at booking time
-            // (SegmentController path).
-            $preReserved = $booking->segments()->exists();
-            if ($preReserved) {
-                $seats = (int) $booking->seats;
-                foreach ($booking->segments as $seg) {
-                    $seg->releaseSeats($seats);
-                }
-                // Re-sync display counter
-                $minAvail = TripSegment::where('trip_id', $booking->trip_id)->min('seats_available');
-                $booking->trip()->update(['seats_available' => $minAvail]);
-            }
+            // No seat release needed — seats are only reserved at acceptance,
+            // never at booking creation, so a pending booking holds no seats.
             $booking->update(['status' => 'rejected']);
         });
 
@@ -367,16 +370,18 @@ class BookingController extends Controller
             $trip  = $booking->trip()->lockForUpdate()->first();
             $seats = (int) $booking->seats;
 
-            // Release seats that were previously reserved.
-            if ($booking->status === 'accepted' || $booking->segments()->exists()) {
+            // Only release seats if the booking was accepted — seats are reserved
+            // at acceptance time, not at booking creation (pending bookings hold
+            // no seats, so cancelling one doesn't need a release).
+            if ($booking->status === 'accepted') {
                 $allSegs = TripSegment::where('trip_id', $trip->id)
                     ->orderBy('order_index')
                     ->lockForUpdate()
                     ->get();
 
                 if ($allSegs->isNotEmpty()) {
-                    // Check whether the booking has explicit segment pivot entries
-                    // (SegmentController path) or we derive coverage from stops.
+                    // Use explicit pivot rows (SegmentController path) or derive
+                    // coverage from pickup/dropoff stops (BookingController path).
                     $segmentsToRelease = $booking->segments()->exists()
                         ? $booking->segments()->get()
                         : $this->getSegmentsForRoute(
@@ -391,18 +396,16 @@ class BookingController extends Controller
 
                     $minAvail = TripSegment::where('trip_id', $trip->id)->min('seats_available');
                     $trip->update(['seats_available' => $minAvail]);
-                } elseif ($booking->status === 'accepted') {
+                } else {
                     // Simple trip with no segments — restore global counter.
                     $trip->increment('seats_available', $seats);
                 }
-            }
 
-            // ── Debt re-application on cancellation ──────────────────────
-            // If this was an accepted booking that already had its debt cleared
-            // (accept() incremented balance), but the passenger is now cancelling,
-            // we must put the debt back because they are no longer paying it.
-            if ($booking->status === 'accepted' && (float) $booking->debt_carried > 0) {
-                $booking->passenger()->first()->decrement('balance', $booking->debt_carried);
+                // Debt was cleared from balance at acceptance; put it back
+                // since the passenger is no longer paying via this booking.
+                if ((float) $booking->debt_carried > 0) {
+                    $booking->passenger()->first()->decrement('balance', $booking->debt_carried);
+                }
             }
 
             $booking->update(['status' => 'cancelled']);

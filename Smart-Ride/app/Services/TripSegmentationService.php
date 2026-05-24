@@ -304,6 +304,9 @@ class TripSegmentationService
             }
 
             // Capacity check on every overlapping leg.
+            // Note: seats are NOT reserved yet — they are only reserved when
+            // the driver accepts the booking. This keeps the trip visible to
+            // all passengers while their requests are pending.
             foreach ($sub as $seg) {
                 if (!$seg->hasAvailableSeats($seats)) {
                     throw new RuntimeException(
@@ -311,16 +314,6 @@ class TripSegmentationService
                     );
                 }
             }
-
-            // Reserve.
-            foreach ($sub as $seg) {
-                $seg->reserveSeats($seats);
-            }
-
-            // Keep trips.seats_available = min(segment seats_available) so
-            // the simple BookingController path sees an accurate display counter.
-            $minAvail = TripSegment::where('trip_id', $trip->id)->min('seats_available');
-            $trip->update(['seats_available' => $minAvail]);
 
             $tripPrice = round($sub->sum(fn ($s) => (float) $s->price) * $seats, 2);
 
@@ -380,25 +373,28 @@ class TripSegmentationService
         }
 
         return DB::transaction(function () use ($booking) {
-            $segments = $booking->segments()->lockForUpdate()->get();
-            foreach ($segments as $seg) {
-                /** @var int $seats */
-                $seats = (int) $seg->pivot->seats;
-                $seg->releaseSeats($seats);
-            }
+            // Only release seats if the booking was accepted — seats are
+            // reserved at acceptance time, not at booking creation.
+            if ($booking->status === 'accepted') {
+                $segments = $booking->segments()->lockForUpdate()->get();
+                foreach ($segments as $seg) {
+                    /** @var int $seats */
+                    $seats = (int) $seg->pivot->seats;
+                    $seg->releaseSeats($seats);
+                }
 
-            // Re-sync the trip-level display counter.
-            $minAvail = TripSegment::where('trip_id', $booking->trip_id)->min('seats_available');
-            if ($minAvail !== null) {
-                $booking->trip()->update(['seats_available' => $minAvail]);
-            }
+                // Re-sync the trip-level display counter.
+                $minAvail = TripSegment::where('trip_id', $booking->trip_id)->min('seats_available');
+                if ($minAvail !== null) {
+                    $booking->trip()->update(['seats_available' => $minAvail]);
+                }
 
-            // ── Debt re-application on cancellation ───────────────────
-            // If the booking was accepted (debt already cleared from balance)
-            // but now the passenger cancels, put the debt back because
-            // they are no longer paying it through this booking.
-            if ($booking->status === 'accepted' && (float) $booking->debt_carried > 0) {
-                $booking->passenger()->first()->decrement('balance', (float) $booking->debt_carried);
+                // ── Debt re-application on cancellation ───────────────────
+                // Debt was cleared from balance when accepted; put it back
+                // now that the passenger is no longer paying via this booking.
+                if ((float) $booking->debt_carried > 0) {
+                    $booking->passenger()->first()->decrement('balance', (float) $booking->debt_carried);
+                }
             }
 
             $booking->status = 'cancelled';

@@ -27,7 +27,11 @@ class NotificationModel {
       body:      (json['body'] ?? '').toString(),
       type:      (json['type'] ?? '').toString(),
       isRead:    json['is_read'] == true || json['is_read'] == 1,
-      data:      json['data'] as Map<String, dynamic>?,
+      // Laravel stores `data` as a JSON column; when empty it returns `[]`
+      // (a List), not `{}` (a Map). Guard against both to avoid a cast crash.
+      data:      json['data'] is Map<String, dynamic>
+                     ? json['data'] as Map<String, dynamic>
+                     : null,
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
                  DateTime.now(),
     );

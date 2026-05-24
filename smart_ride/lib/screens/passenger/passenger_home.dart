@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import '../../core/constant.dart';
 import '../../core/localization.dart';
 import '../../models/user-model.dart';
@@ -8,6 +9,7 @@ import '../../models/booking_model.dart';
 import '../../controllers/trip_controller.dart';
 import '../../controllers/booking_controller.dart';
 import '../../controllers/auth_controller.dart';
+import '../../controllers/notification_controller.dart';
 import '../shared/login_screen.dart';
 import '../shared/profile_screen.dart';
 import '../shared/notifications_screen.dart';
@@ -27,6 +29,7 @@ class _PassengerHomeState extends State<PassengerHome>
   final TripController _tripCtl = TripController();
   final BookingController _bookingCtl = BookingController();
   final AuthController _authCtl = AuthController();
+  late final NotificationController _notifCtl;
 
   final TextEditingController _fromCtl = TextEditingController();
   final TextEditingController _toCtl = TextEditingController();
@@ -45,6 +48,10 @@ class _PassengerHomeState extends State<PassengerHome>
   void initState() {
     super.initState();
     _currentUser = widget.user;
+    // Start notification polling immediately so the badge stays live.
+    _notifCtl = Get.isRegistered<NotificationController>()
+        ? Get.find<NotificationController>()
+        : Get.put(NotificationController(token: widget.user.token));
     _refreshAll();
   }
 
@@ -312,15 +319,46 @@ class _PassengerHomeState extends State<PassengerHome>
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => NotificationsScreen(user: widget.user)),
-            ),
-            icon: const Icon(Icons.notifications_none_rounded,
-                color: AppColors.textPrimary, size: 22),
-          ),
+          Obx(() {
+            final unread = _notifCtl.unreadCount.value;
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            NotificationsScreen(user: widget.user)),
+                  ),
+                  icon: const Icon(Icons.notifications_none_rounded,
+                      color: AppColors.textPrimary, size: 22),
+                ),
+                if (unread > 0)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: AppColors.rose,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints:
+                          const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        unread > 9 ? '9+' : '$unread',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          }),
           IconButton(
             onPressed: _logout,
             icon: const Icon(Icons.logout_rounded,
