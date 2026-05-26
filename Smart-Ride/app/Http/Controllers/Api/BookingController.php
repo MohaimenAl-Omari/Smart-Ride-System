@@ -15,10 +15,6 @@ use Illuminate\Support\Facades\Validator;
 
 class BookingController extends Controller
 {
-    // ---------------------------------------------------------------
-    // Passenger: create a booking request
-    // ---------------------------------------------------------------
-
     public function store(Request $request)
     {
         $user = $request->user();
@@ -146,10 +142,6 @@ class BookingController extends Controller
         ]);
     }
 
-    // ---------------------------------------------------------------
-    // Passenger: list their bookings
-    // ---------------------------------------------------------------
-
     public function myBookings(Request $request)
     {
         $user = $request->user();
@@ -167,10 +159,6 @@ class BookingController extends Controller
             'bookings' => $bookings,
         ]);
     }
-
-    // ---------------------------------------------------------------
-    // Driver: list pending + recent bookings for their trips
-    // ---------------------------------------------------------------
 
     public function pendingForDriver(Request $request)
     {
@@ -193,21 +181,6 @@ class BookingController extends Controller
         ]);
     }
 
-    // ---------------------------------------------------------------
-    // Driver: accept a booking
-    // ---------------------------------------------------------------
-
-    /**
-     * Two paths:
-     *
-     * A) The booking came via SegmentController (has booking_segments pivot rows).
-     *    → Seats are reserved NOW at acceptance (not pre-reserved at booking time).
-     *    → Check each covered segment has capacity, then decrement.
-     *
-     * B) The booking came via BookingController::store() (no pivot rows).
-     *    → Derive covered segments from pickup/dropoff stops.
-     *    → Reserve segment seats, or fall back to the global counter if no segments.
-     */
     public function accept(Request $request, Booking $booking)
     {
         $user = $request->user();
@@ -238,7 +211,7 @@ class BookingController extends Controller
 
                 if ($hasPivotRows) {
                     $bookingSegIds = $booking->segments()->pluck('trip_segments.id')->toArray();
-                    $coveredSegs   = $allSegs->filter(fn ($s) => in_array($s->id, $bookingSegIds));
+                    $coveredSegs   = $allSegs->filter(fn($s) => in_array($s->id, $bookingSegIds));
 
                     foreach ($coveredSegs as $seg) {
                         if ($seg->seats_available < $seats) {
@@ -253,7 +226,6 @@ class BookingController extends Controller
 
                     $minAvail = TripSegment::where('trip_id', $trip->id)->min('seats_available');
                     $trip->update(['seats_available' => $minAvail ?? $trip->seats_available]);
-
                 } elseif ($allSegs->isNotEmpty()) {
                     // Path B-Segments: reserve on the covered legs now.
                     $covered = $this->getSegmentsForRoute(
@@ -275,7 +247,6 @@ class BookingController extends Controller
 
                     $minAvail = TripSegment::where('trip_id', $trip->id)->min('seats_available');
                     $trip->update(['seats_available' => $minAvail]);
-
                 } else {
                     // Path C: simple trip, no segments — use global counter.
                     if ($trip->seats_available < $seats) {
@@ -311,10 +282,6 @@ class BookingController extends Controller
         ]);
     }
 
-    // ---------------------------------------------------------------
-    // Driver: reject a booking
-    // ---------------------------------------------------------------
-
     public function reject(Request $request, Booking $booking)
     {
         $user = $request->user();
@@ -342,10 +309,6 @@ class BookingController extends Controller
             'message' => 'Booking rejected.',
         ]);
     }
-
-    // ---------------------------------------------------------------
-    // Passenger: cancel a booking
-    // ---------------------------------------------------------------
 
     public function cancel(Request $request, Booking $booking)
     {
@@ -420,10 +383,6 @@ class BookingController extends Controller
         ]);
     }
 
-    // ---------------------------------------------------------------
-    // Passenger check-in
-    // ---------------------------------------------------------------
-
     public function checkIn(Request $request, Booking $booking)
     {
         $user = $request->user();
@@ -476,10 +435,6 @@ class BookingController extends Controller
         ]);
     }
 
-    // ---------------------------------------------------------------
-    // Driver check-in
-    // ---------------------------------------------------------------
-
     public function driverCheckIn(Request $request, Booking $booking)
     {
         $user = $request->user();
@@ -509,10 +464,6 @@ class BookingController extends Controller
         ]);
     }
 
-    // ---------------------------------------------------------------
-    // Passenger: record the chosen payment method
-    // ---------------------------------------------------------------
-
     public function setPaymentMethod(Request $request, Booking $booking)
     {
         $user = $request->user();
@@ -540,19 +491,6 @@ class BookingController extends Controller
         ]);
     }
 
-    // ---------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------
-
-    /**
-     * Return the contiguous slice of segments covered by a pickup→dropoff route.
-     * Falls back to the full segment list if the route cannot be resolved.
-     *
-     * @param  Collection<int, TripSegment>  $allSegs  Ordered by order_index.
-     * @param  string                         $from
-     * @param  string                         $to
-     * @return Collection<int, TripSegment>
-     */
     private function getSegmentsForRoute(Collection $allSegs, string $from, string $to): Collection
     {
         $startIdx = $allSegs->search(fn($s) => $s->start_stop === $from);
@@ -566,13 +504,6 @@ class BookingController extends Controller
         return $allSegs->slice($startIdx, $endIdx - $startIdx + 1)->values();
     }
 
-    /**
-     * Resolve the price for a booking leg.
-     *
-     * Priority:
-     *   1. Sum of driver-set prices in trip_segments for the covered legs.
-     *   2. Proportional fallback based on trip.price_per_seat.
-     */
     protected function resolvePrice(Trip $trip, Collection $allSegs, string $pickup, string $dropoff): float
     {
         if ($allSegs->isNotEmpty()) {
@@ -581,21 +512,16 @@ class BookingController extends Controller
                 return (float) $covered->sum('price');
             }
         }
-
-        // Fallback: proportional split based on stop order.
         $base  = (float) $trip->price_per_seat;
         $stops = $trip->stops->pluck('name')->values();
         if ($stops->count() < 2) {
             return $base;
         }
-
         $iFrom = $stops->search($pickup,  true);
         $iTo   = $stops->search($dropoff, true);
-
         if ($iFrom === false || $iTo === false || $iTo <= $iFrom) {
             return $base;
         }
-
         $totalSeg = $stops->count() - 1;
         return round($base * (($iTo - $iFrom) / $totalSeg), 2);
     }

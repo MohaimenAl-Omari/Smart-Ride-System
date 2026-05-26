@@ -5,7 +5,6 @@ import '../../core/localization.dart';
 import '../../controllers/support_controller.dart';
 import '../../models/user-model.dart';
 
-/// Sends a message to the team via the Contact Us API.
 class ContactUsScreen extends StatefulWidget {
   final UserModel user;
   const ContactUsScreen({super.key, required this.user});

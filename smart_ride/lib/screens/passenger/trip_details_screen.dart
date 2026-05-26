@@ -63,10 +63,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     AppToast.show(context, res.message, error: !res.success);
     if (res.success) Navigator.pop(context);
   }
-
-  /// Returns true when the passenger has chosen stops that differ from the
-  /// full route (origin → destination). For partial routes the exact price is
-  /// only known after SegmentBookingScreen queries the per-segment API data.
   bool _isPartialRoute(TripModel t) {
     final from = _pickupStop ?? t.origin;
     final to = _dropoffStop ?? t.destination;
@@ -485,12 +481,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 (v) => setState(() => _dropoffStop = v == '(none)' ? null : v)),
           ],
           const SizedBox(height: 14),
-          // ── Price display ─────────────────────────────────────────
-          // For the full route we show the exact price per seat × seats.
-          // For a partial route the real price is per-segment and only
-          // known after SegmentBookingScreen fetches API data, so we
-          // show an "exact price at checkout" notice instead of a
-          // potentially wrong proportional estimate.
           if (!partial)
             Container(
               padding:

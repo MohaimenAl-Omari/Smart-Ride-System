@@ -8,13 +8,6 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminUserSeeder extends Seeder
 {
-    /**
-     * Seed one admin account that can sign in to the /admin dashboard.
-     *
-     * Credentials (change after first login):
-     *   email:    admin@smartride.test
-     *   password: password
-     */
     public function run(): void
     {
         User::updateOrCreate(

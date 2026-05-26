@@ -19,10 +19,7 @@ class LocationResult {
 
 class LocationPickerScreen extends StatefulWidget {
   final String title;
-
-  /// Pre-selected position to show when the screen opens (optional).
   final LatLng? initial;
-
   const LocationPickerScreen({
     super.key,
     required this.title,
@@ -35,29 +32,19 @@ class LocationPickerScreen extends StatefulWidget {
 
 class _LocationPickerScreenState extends State<LocationPickerScreen>
     with SingleTickerProviderStateMixin {
-  // ── Tabs ──────────────────────────────────────────────────────────
   late final TabController _tabs;
   static const int _tabText = 0;
   static const int _tabMap  = 1;
-
-  // ── Shared state ─────────────────────────────────────────────────
-  // Default: Amman, Jordan (used for map initial position)
   static const LatLng _amman = LatLng(31.9539, 35.9106);
 
   LatLng _markerPosition = _amman;
   String _resolvedAddress = '';
   bool _resolving = false;
-  bool _confirmed = false; // true once the user has confirmed a result
-
-  // ── "Type Address" tab ───────────────────────────────────────────
+  bool _confirmed = false;
   final TextEditingController _manualCtl = TextEditingController();
   String? _manualError;
   bool _searching = false;
-
-  // ── "Pick on Map" tab ────────────────────────────────────────────
   GoogleMapController? _mapController;
-
-  // ── Preset simulation spots (Jordan cities) ──────────────────────
   static const List<_SimSpot> _simSpots = [
     _SimSpot('Amman – Downtown',      31.9539, 35.9106),
     _SimSpot('Amman – Abdali',        31.9727, 35.9179),
@@ -183,11 +170,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
       ),
     );
   }
-
-  // ---------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,9 +194,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
       ),
     );
   }
-
-  // ── Header ──────────────────────────────────────────────────────
-
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
@@ -253,9 +232,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
       ),
     );
   }
-
-  // ── Tab bar ─────────────────────────────────────────────────────
-
   Widget _buildTabBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
@@ -307,18 +283,14 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
     );
   }
 
-  // ── "Type Address" tab ──────────────────────────────────────────
-
   Widget _buildTextTab() {
     final hasResult = _resolvedAddress.isNotEmpty && _tabs.index == _tabText
         || (_manualCtl.text.trim().isNotEmpty && _resolvedAddress.isNotEmpty);
-    // Consider result ready when we've searched and have coords
     final ready = _resolvedAddress.isNotEmpty || _manualCtl.text.trim().isNotEmpty;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
-        // Address input field
         Container(
           decoration: AppDecor.card(),
           padding: const EdgeInsets.all(16),
@@ -398,8 +370,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
           ),
         ),
         const SizedBox(height: 18),
-
-        // Preset simulation spots
         const SectionHeader(
           title: 'Quick Locations',
           subtitle: 'Tap a city/landmark to use it directly.',
@@ -454,8 +424,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
           }).toList(),
         ),
         const SizedBox(height: 24),
-
-        // Result preview + confirm
         if (_resolvedAddress.isNotEmpty || _manualCtl.text.trim().isNotEmpty) ...[
           _buildResultPreview(),
           const SizedBox(height: 14),
@@ -479,7 +447,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
     }
     final ok = await _forwardGeocode(q);
     if (ok) {
-      // Show the result
       setState(() {});
     }
   }
@@ -559,12 +526,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
     );
   }
 
-  // ── "Pick on Map" tab ───────────────────────────────────────────
-
   Widget _buildMapTab() {
     return Stack(
       children: [
-        // Full map
         GoogleMap(
           initialCameraPosition: CameraPosition(
             target: widget.initial ?? _amman,
@@ -591,8 +555,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
           myLocationButtonEnabled: false,
           zoomControlsEnabled: false,
         ),
-
-        // Simulation quick-jump chips (top of map)
         Positioned(
           top: 12,
           left: 12,
@@ -623,8 +585,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
             ),
           ),
         ),
-
-        // Bottom panel
         Positioned(
           bottom: 0, left: 0, right: 0,
           child: Container(
@@ -763,8 +723,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen>
     );
   }
 }
-
-/// A preset simulation location used for quick-jump chips.
 class _SimSpot {
   final String name;
   final double lat;

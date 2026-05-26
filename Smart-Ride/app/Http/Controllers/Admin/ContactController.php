@@ -6,17 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
 use Illuminate\Http\Request;
 
-/**
- * Admin-side handling for "Contact us" submissions.
- *
- * Wired to the F-table feature "Management reports" (admin handles user
- * reports and complaints). Provides:
- *   - paginated list filtered by status / search term
- *   - status update (new → in_progress → resolved)
- *
- * Read-only otherwise; deleting messages is intentionally not exposed
- * because the team usually wants to keep an audit trail of complaints.
- */
 class ContactController extends Controller
 {
     public function index(Request $request)

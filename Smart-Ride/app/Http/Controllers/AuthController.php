@@ -143,14 +143,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Update the authenticated user's profile.
-     *
-     * Accepts any subset of: name, email, phone, city, password,
-     * current_password (required to change password), profile_image
-     * (multipart upload). Validation runs inside the controller per
-     * project conventions; persistence sits in the model.
-     */
     public function updateProfile(Request $request)
     {
         $user = $request->user();

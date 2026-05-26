@@ -6,33 +6,22 @@ class BookingModel {
   final String? dropoffStop;
   final int seats;
   final double totalPrice;
-
-  /// Amount of prior no-show debt included in [totalPrice].
   final double debtCarried;
-
   final String status;
-
-  /// true once the passenger has checked in.
   final bool isCheckedIn;
-
-  /// true when trip completed and the passenger never checked in.
   final bool noShow;
-
   final String? passengerName;
   final String? passengerPhone;
-
-  // Passenger pickup location — three structured fields
   final String? locationArea;
   final String? locationStreet;
   final String? locationBuilding;
-
-  /// Payment method chosen by the passenger: 'cash', 'card', 'wallet', or null.
   final String? paymentMethod;
 
   final String? tripOrigin;
   final String? tripDestination;
   final DateTime? tripDepartureAt;
   final String? driverName;
+  final String? driverPhone;
   final String? carModel;
   final String? carPlate;
 
@@ -58,12 +47,11 @@ class BookingModel {
     this.tripDestination,
     this.tripDepartureAt,
     this.driverName,
+    this.driverPhone,
     this.carModel,
     this.carPlate,
   });
 
-  /// A human-readable address string built from the three location fields.
-  /// Returns null if none of the fields were filled.
   String? get locationSummary {
     final parts = <String>[];
     if (locationBuilding?.isNotEmpty == true) parts.add('Bldg ${locationBuilding!}');
@@ -100,8 +88,9 @@ class BookingModel {
       tripDepartureAt: trip?['departure_at'] != null
           ? DateTime.tryParse(trip!['departure_at'].toString())
           : null,
-      driverName: driver?['name'],
-      carModel:   trip?['car_model'],
+      driverName:  driver?['name'],
+      driverPhone: driver?['phone'],
+      carModel:    trip?['car_model'],
       carPlate:   trip?['car_plate'],
     );
   }

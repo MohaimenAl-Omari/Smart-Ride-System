@@ -192,14 +192,13 @@ class TripController extends Controller
             ->where('status', 'cancelled')
             ->with('passenger')
             ->get()
-            ->each(fn ($b) => FcmService::tripCancelledByDriver($b->passenger, $route));
+            ->each(fn($b) => FcmService::tripCancelledByDriver($b->passenger, $route));
 
         return response()->json([
             'status'  => true,
             'message' => 'Trip cancelled.',
         ]);
     }
-
 
     public function start(Request $request, Trip $trip)
     {
@@ -264,7 +263,7 @@ class TripController extends Controller
                 ->where('is_checked_in', true)
                 ->with('passenger')
                 ->get()
-                ->each(fn ($b) => FcmService::tripStarted($b->passenger, $route));
+                ->each(fn($b) => FcmService::tripStarted($b->passenger, $route));
         });
 
         $checkedIn = $trip->bookings()
@@ -280,36 +279,28 @@ class TripController extends Controller
         ]);
     }
 
-
     public function complete(Request $request, Trip $trip)
     {
         $user = $request->user();
         if ($trip->driver_id !== $user->id) {
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
         }
-
         DB::transaction(function () use ($trip) {
             $trip->update(['status' => 'completed']);
-
-            // Mark checked-in passengers as completed (no-shows were already handled
-            // in start() and must NOT be overwritten to 'completed').
             $trip->bookings()
                 ->where('status', 'accepted')
                 ->where('is_checked_in', true)
                 ->update(['status' => 'completed']);
         });
-
-        // Notify completed passengers to rate their driver.
         $driverName = $user->name;
         $trip->bookings()
             ->where('status', 'completed')
             ->with('passenger')
             ->get()
-            ->each(fn ($b) => FcmService::tripCompleted($b->passenger, $driverName));
+            ->each(fn($b) => FcmService::tripCompleted($b->passenger, $driverName));
 
         return response()->json(['status' => true, 'message' => 'Trip completed.']);
     }
-
 
     public function driverHistory(Request $request)
     {

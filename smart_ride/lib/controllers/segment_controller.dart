@@ -71,7 +71,6 @@ class SegmentController {
     );
   }
 
-  /// Books a segment and saves the passenger's three-field location.
   Future<SegmentActionResult> bookWithLocation({
     required String token,
     required int tripId,
@@ -131,12 +130,10 @@ class SegmentController {
     );
   }
 
-  /// Records the passenger's chosen payment method (cash / card / wallet)
-  /// against the booking on the server.
   Future<bool> savePaymentMethod({
     required String token,
     required int bookingId,
-    required String method, // 'cash' | 'card' | 'wallet'
+    required String method,
   }) async {
     try {
       final res = await http.post(

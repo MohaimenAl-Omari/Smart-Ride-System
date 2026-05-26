@@ -4,24 +4,18 @@ import 'localization.dart';
 
 const String baseUrl = "http://127.0.0.1:8000/api";
 class AppColors {
-  // Surfaces
-  static const Color background = Color(0xFFF6F8FB);   // page background
-  static const Color surface = Color(0xFFFFFFFF);      // cards, sheets
-  static const Color surfaceAlt = Color(0xFFF1F5F9);   // input fields
-  static const Color surfaceMuted = Color(0xFFE2E8F0); // dividers, chips
-
-  // Borders
+  static const Color background = Color(0xFFF6F8FB);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceAlt = Color(0xFFF1F5F9);
+  static const Color surfaceMuted = Color(0xFFE2E8F0);
   static const Color border = Color(0xFFE2E8F0);
   static const Color borderStrong = Color(0xFFCBD5E1);
 
-  // Brand
-  static const Color primary = Color(0xFF0EA5A4);     // teal
-  static const Color primaryDark = Color(0xFF0F766E); // deep teal
-  static const Color primarySoft = Color(0xFFCCFBF1); // very light teal
-  static const Color accent = Color(0xFF0F172A);      // navy
+  static const Color primary = Color(0xFF0EA5A4);
+  static const Color primaryDark = Color(0xFF0F766E);
+  static const Color primarySoft = Color(0xFFCCFBF1);
+  static const Color accent = Color(0xFF0F172A);
   static const Color accentSoft = Color(0xFF1E293B);
-
-  // Status palette
   static const Color emerald = Color(0xFF10B981);
   static const Color emeraldSoft = Color(0xFFD1FAE5);
   static const Color amber = Color(0xFFF59E0B);
@@ -30,11 +24,9 @@ class AppColors {
   static const Color roseSoft = Color(0xFFFEE2E2);
   static const Color sky = Color(0xFF0EA5E9);
   static const Color skySoft = Color(0xFFE0F2FE);
-
-  // Text
-  static const Color textPrimary = Color(0xFF0F172A);   // navy 900
-  static const Color textSecondary = Color(0xFF475569); // slate 600
-  static const Color textMuted = Color(0xFF94A3B8);     // slate 400
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF475569);
+  static const Color textMuted = Color(0xFF94A3B8);
   static const Color textOnPrimary = Colors.white;
 
   static const LinearGradient primaryGradient = LinearGradient(
@@ -186,7 +178,6 @@ class AppToast {
   }
 }
 
-/// Soft brand glow used behind hero sections.
 class AmbientBackground extends StatelessWidget {
   const AmbientBackground({super.key});
 
@@ -219,8 +210,6 @@ class AmbientBackground extends StatelessWidget {
         ),
       );
 }
-
-/// Reusable status chip used across passenger / driver / admin views.
 class StatusBadge extends StatelessWidget {
   final String status;
   final bool dense;
@@ -308,7 +297,6 @@ class _StatusPalette {
   _StatusPalette(this.bg, this.fg);
 }
 
-/// A primary CTA used across the whole app.
 class PrimaryButton extends StatelessWidget {
   final String label;
   final IconData? icon;
@@ -426,7 +414,6 @@ class SecondaryButton extends StatelessWidget {
   }
 }
 
-/// Page section heading – consistent everywhere.
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -477,7 +464,6 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-/// Empty / placeholder card.
 class EmptyState extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -530,7 +516,6 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// Pill icon + value used inside cards.
 class InfoPill extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -563,7 +548,6 @@ class InfoPill extends StatelessWidget {
   }
 }
 
-/// Small circular avatar built from the user's first letter.
 class InitialAvatar extends StatelessWidget {
   final String name;
   final double size;
@@ -595,12 +579,6 @@ class InitialAvatar extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Emergency SOS Button
-// A floating red button shown on both passenger and driver home screens.
-// Tapping it opens a modal with direct-dial buttons for Jordan emergency lines.
-// ─────────────────────────────────────────────────────────────────────────────
-
 class EmergencyButton extends StatelessWidget {
   const EmergencyButton({super.key});
 
@@ -608,7 +586,6 @@ class EmergencyButton extends StatelessWidget {
     _EmergencyLine('911', 'General Emergency', Icons.emergency_rounded),
     _EmergencyLine('991', 'Police', Icons.local_police_rounded),
     _EmergencyLine('199', 'Fire Department', Icons.local_fire_department_rounded),
-    _EmergencyLine('193', 'Ambulance / Civil Defense', Icons.local_hospital_rounded),
   ];
 
   void _show(BuildContext context) {

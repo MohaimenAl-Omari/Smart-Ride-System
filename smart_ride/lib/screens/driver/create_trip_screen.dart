@@ -139,17 +139,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       return;
     }
 
-    // Ensure segment controllers are in sync
     if (_segPriceCtls.length != _stops.length + 1) {
       _rebuildSegmentControllers();
     }
 
-    // ── Cumulative price validation ───────────────────────────────
-    // The driver enters prices as cumulative totals from origin:
-    //   Field 0: origin → stop1  (e.g. A→B = 3 JD)
-    //   Field 1: origin → stop2  (e.g. A→C = 6 JD)
-    // Per-segment prices are derived as diffs: seg[i] = cum[i] - cum[i-1]
-    // so a full-trip passenger pays 6 JD and a partial passenger pays 3 JD.
     final points = _orderedPoints;
     final cumulativePrices = <double>[];
     for (int i = 0; i < _segPriceCtls.length; i++) {
@@ -165,7 +158,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         );
         return;
       }
-      // Each cumulative price must be strictly greater than the previous
       if (i > 0 && v <= cumulativePrices[i - 1]) {
         final prevLabel = '${points[0]} → ${points[i]}';
         AppToast.show(
@@ -182,17 +174,13 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       cumulativePrices.add(v);
     }
 
-    // Derive per-segment prices (what gets stored in trip_segments.price)
     final segmentPrices = <double>[];
     for (int i = 0; i < cumulativePrices.length; i++) {
       segmentPrices.add(
         i == 0 ? cumulativePrices[0] : cumulativePrices[i] - cumulativePrices[i - 1],
       );
     }
-
-    // Full-trip cost = last cumulative price
     final totalTripPrice = cumulativePrices.last;
-
     HapticFeedback.lightImpact();
     setState(() => _saving = true);
 
@@ -246,7 +234,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
                     children: [
-                      // ── Route ──────────────────────────────────────
                       _section(s.route, subtitle: s.routeSub, children: [
                         _field(_origin, s.origin, Icons.my_location_rounded),
                         const SizedBox(height: 12),
@@ -254,8 +241,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                             Icons.place_outlined),
                       ]),
                       const SizedBox(height: 14),
-
-                      // ── Intermediate stops ─────────────────────────
                       _section(s.stopsAlongTheWay,
                           subtitle: s.stopsSub,
                           children: [
@@ -290,16 +275,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                         ],
                       ]),
                       const SizedBox(height: 14),
-
-                      // ── Segment prices ─────────────────────────────
-                      // Always shown (origin→destination is always present).
                       if (_origin.text.trim().isNotEmpty &&
                           _destination.text.trim().isNotEmpty)
                         _segmentPriceSection(),
-
                       const SizedBox(height: 14),
-
-                      // ── Departure ──────────────────────────────────
                       _section(s.departure, children: [
                         GestureDetector(
                           onTap: _pickDeparture,
@@ -329,8 +308,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                       ]),
                       const SizedBox(height: 14),
 
-                      // ── Seats ──────────────────────────────────────
-                      // "Price per seat" removed — prices are per segment only.
                       _section(
                         s.seatsAndPrice,
                         subtitle: s.seatsAndPriceSub,
@@ -357,8 +334,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                         ],
                       ),
                       const SizedBox(height: 14),
-
-                      // ── Vehicle ────────────────────────────────────
                       _section(s.vehicle, subtitle: s.vehicleSub, children: [
                         _field(_carModel, s.carModel,
                             Icons.directions_car_filled_rounded),
@@ -367,8 +342,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                             Icons.confirmation_number_rounded),
                       ]),
                       const SizedBox(height: 14),
-
-                      // ── Notes ──────────────────────────────────────
                       _section(s.notes, subtitle: s.notesSub, children: [
                         _field(_notes, s.notesHint, Icons.notes_rounded,
                             maxLines: 3),
@@ -413,7 +386,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         for (int i = 0; i < points.length - 1 && i < _segPriceCtls.length; i++) ...[
           if (i > 0) const SizedBox(height: 10),
           _segmentPriceRow(
-            // Always show "origin → stopN" (cumulative, not per-leg)
             from: points[0],
             to:   points[i + 1],
             ctl:  _segPriceCtls[i],

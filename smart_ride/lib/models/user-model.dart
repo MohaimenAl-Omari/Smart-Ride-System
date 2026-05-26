@@ -5,14 +5,12 @@ class UserModel {
   final String phone;
   final String role;
   final String? city;
-  final String? image;       // raw path stored on the server
-  final String? imageUrl;    // public URL the API computes for us
+  final String? image;
+  final String? imageUrl;
   final double ratingAverage;
   final int ratingsCount;
   final bool isActive;
   final String token;
-
-  /// Account balance. Positive = credit, negative = outstanding no-show debt.
   final double balance;
 
   UserModel({
@@ -51,7 +49,6 @@ class UserModel {
     );
   }
 
-  /// Used by the SessionService to persist a logged-in user locally.
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
@@ -68,7 +65,6 @@ class UserModel {
         'balance': balance,
       };
 
-  /// Used by the SessionService when restoring a saved session.
   factory UserModel.fromStored(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] is int

@@ -7,9 +7,6 @@ use App\Models\ContactMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-/**
- * Stores Contact-Us submissions sent from the mobile app.
- */
 class ContactController extends Controller
 {
     public function store(Request $request)

@@ -27,8 +27,6 @@ class NotificationModel {
       body:      (json['body'] ?? '').toString(),
       type:      (json['type'] ?? '').toString(),
       isRead:    json['is_read'] == true || json['is_read'] == 1,
-      // Laravel stores `data` as a JSON column; when empty it returns `[]`
-      // (a List), not `{}` (a Map). Guard against both to avoid a cast crash.
       data:      json['data'] is Map<String, dynamic>
                      ? json['data'] as Map<String, dynamic>
                      : null,
@@ -41,20 +39,20 @@ class NotificationModel {
     switch (type) {
       case 'booking_created':
       case 'booking_accepted':
-        return const NotifStyle(0xe22a, 0xFF10B981); // check_circle / emerald
+        return const NotifStyle(0xe22a, 0xFF10B981);
       case 'booking_rejected':
       case 'booking_cancelled':
-        return const NotifStyle(0xe232, 0xFFEF4444); // cancel / rose
+        return const NotifStyle(0xe232, 0xFFEF4444);
       case 'trip_started':
-        return const NotifStyle(0xe1d4, 0xFF0EA5A4); // directions_car / teal
+        return const NotifStyle(0xe1d4, 0xFF0EA5A4);
       case 'trip_cancelled':
         return const NotifStyle(0xe232, 0xFFEF4444);
       case 'trip_completed':
-        return const NotifStyle(0xe22a, 0xFF0EA5E9); // check / sky
+        return const NotifStyle(0xe22a, 0xFF0EA5E9);
       case 'driver_rated':
-        return const NotifStyle(0xe5d2, 0xFFF59E0B); // star / amber
+        return const NotifStyle(0xe5d2, 0xFFF59E0B);
       default:
-        return const NotifStyle(0xe7f4, 0xFF94A3B8); // notifications / muted
+        return const NotifStyle(0xe7f4, 0xFF94A3B8);
     }
   }
 }

@@ -38,7 +38,6 @@ class AuthController {
     if (response.statusCode == 200 && data['status'] == true) {
       final token = (data['token'] ?? '').toString();
       final user = UserModel.fromJson(data['user'], token);
-      // Persist the session so the user stays signed in next launch.
       await SessionService.save(user);
       return AuthResult(user: user);
     }
@@ -80,19 +79,12 @@ class AuthController {
     if (response.statusCode == 200 && data['status'] == true) {
       final token = (data['token'] ?? '').toString();
       final user = UserModel.fromJson(data['user'], token);
-      // Persist the session so the user stays signed in next launch.
       await SessionService.save(user);
       return AuthResult(user: user);
     }
     return AuthResult(error: data['message']?.toString() ?? 'Login failed');
   }
 
-  /// Update the authenticated user's profile.
-  ///
-  /// All fields are optional. When [imagePath] is provided, the request
-  /// is sent as multipart/form-data and the file is attached as
-  /// `profile_image`. When [password] is provided, [currentPassword]
-  /// is required and verified server-side.
   Future<AuthResult> updateProfile({
     required UserModel current,
     String? name,
@@ -127,7 +119,6 @@ class AuthController {
       final response = await http.Response.fromStream(streamed);
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['status'] == true) {
-        // Re-use the same token; server returns a fresh user payload.
         final user = UserModel.fromJson(data['user'], current.token);
         await SessionService.save(user);
         return AuthResult(user: user);
@@ -139,9 +130,6 @@ class AuthController {
     }
   }
 
-  /// Fetches the latest user data from `GET /api/me`.
-  /// Returns an updated [UserModel] (with fresh balance, ratings, etc.)
-  /// or null if the call fails.
   Future<UserModel?> getMe(String token) async {
     try {
       final res = await http.get(
@@ -172,11 +160,8 @@ class AuthController {
       );
       ok = response.statusCode == 200;
     } catch (_) {
-      // Even if the network call fails we still want the local session
-      // cleared, so we silently swallow errors here.
       ok = false;
     }
-    // Always wipe the local session on logout.
     await SessionService.clear();
     return ok;
   }

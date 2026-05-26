@@ -9,10 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAdmin
 {
-    /**
-     * Reject anyone who is not signed in with an admin-role account.
-     * Guests get redirected to the admin login page; non-admin users get 403.
-     */
+    
     public function handle(Request $request, Closure $next): Response
     {
         if (!Auth::check()) {

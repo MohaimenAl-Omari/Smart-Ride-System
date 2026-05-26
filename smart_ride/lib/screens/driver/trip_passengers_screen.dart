@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constant.dart';
 import '../../core/localization.dart';
 import '../../models/user-model.dart';
@@ -448,6 +449,68 @@ class _TripPassengersScreenState extends State<TripPassengersScreen> {
     );
   }
 
+  Future<void> _callPhone(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cannot dial $phone')),
+      );
+    }
+  }
+
+  void _showPhoneDialog(String name, String phone) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(name,
+            style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w800)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.phone_rounded, color: AppColors.emerald, size: 36),
+            const SizedBox(height: 10),
+            Text(phone,
+                style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2)),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Dismiss',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.emerald,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.phone_rounded, size: 16),
+            label: const Text('Call'),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _callPhone(phone);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _passengerCard(BookingModel b) {
     final isPending = b.status == 'pending';
     final isAccepted = b.status == 'accepted';
@@ -493,8 +556,72 @@ class _TripPassengersScreenState extends State<TripPassengersScreen> {
                   ],
                 ],
               ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: b.passengerPhone != null && b.passengerPhone!.isNotEmpty
+                    ? () => _showPhoneDialog(
+                          b.passengerName ?? 'Passenger',
+                          b.passengerPhone!,
+                        )
+                    : null,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: b.passengerPhone != null && b.passengerPhone!.isNotEmpty
+                        ? AppColors.emeraldSoft
+                        : AppColors.surfaceMuted,
+                    border: Border.all(
+                        color: b.passengerPhone != null && b.passengerPhone!.isNotEmpty
+                            ? AppColors.emerald.withOpacity(0.4)
+                            : AppColors.border),
+                  ),
+                  child: Icon(Icons.phone_rounded,
+                      color: b.passengerPhone != null && b.passengerPhone!.isNotEmpty
+                          ? AppColors.emerald
+                          : AppColors.textMuted,
+                      size: 15),
+                ),
+              ),
             ],
           ),
+          if (b.passengerPhone != null && b.passengerPhone!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _showPhoneDialog(
+                b.passengerName ?? 'Passenger',
+                b.passengerPhone!,
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: AppColors.emeraldSoft,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.emerald.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.phone_rounded,
+                        color: AppColors.emerald, size: 13),
+                    const SizedBox(width: 7),
+                    Text(b.passengerPhone!,
+                        style: const TextStyle(
+                            color: AppColors.emerald,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4)),
+                    const Spacer(),
+                    const Text('Tap to call',
+                        style: TextStyle(
+                            color: AppColors.emerald,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ),
+          ],
           if (b.pickupStop != null || b.dropoffStop != null) ...[
             const SizedBox(height: 8),
             Container(

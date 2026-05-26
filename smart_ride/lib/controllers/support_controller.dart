@@ -43,7 +43,6 @@ class ContactController {
   }
 }
 
-/// A single driver rating row returned by the API.
 class TripRatingModel {
   final int id;
   final int bookingId;

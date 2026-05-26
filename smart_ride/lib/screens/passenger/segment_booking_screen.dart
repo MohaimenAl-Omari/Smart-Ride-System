@@ -9,10 +9,9 @@ import '../shared/payment_screen.dart';
 class SegmentBookingScreen extends StatefulWidget {
   final UserModel user;
   final int       tripId;
-  final String    from;   // stop chosen in TripDetailsScreen
-  final String    to;     // stop chosen in TripDetailsScreen
-  final int       seats;  // seats chosen in TripDetailsScreen
-
+  final String    from;
+  final String    to;
+  final int       seats;
   const SegmentBookingScreen({
     super.key,
     required this.user,
@@ -35,11 +34,9 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
 
   List<TripSegmentModel> _segments     = const [];
   List<String>           _orderedStops = const [];
-
-  // ── Manual pickup location fields ─────────────────────────────────
-  final _areaCtl     = TextEditingController(); // required
-  final _streetCtl   = TextEditingController(); // optional
-  final _buildingCtl = TextEditingController(); // optional
+  final _areaCtl     = TextEditingController();
+  final _streetCtl   = TextEditingController();
+  final _buildingCtl = TextEditingController();
 
   @override
   void initState() {
@@ -55,7 +52,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
     super.dispose();
   }
 
-  // ── Data loading ──────────────────────────────────────────────────
 
   Future<void> _load() async {
     final segs = await _ctl.listSegments(widget.user.token, widget.tripId);
@@ -72,8 +68,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
     final sorted = [...segs]..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
     return [sorted.first.startStop, ...sorted.map((s) => s.endStop)];
   }
-
-  // ── Route helpers (from/to come from the parent widget) ───────────
 
   List<TripSegmentModel> _route() {
     final iFrom = _orderedStops.indexOf(widget.from);
@@ -110,8 +104,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
     if (!_areaFilled)     return s.enterPickupArea;
     return s.confirmBooking;
   }
-
-  // ── Book ──────────────────────────────────────────────────────────
 
   Future<void> _book() async {
     setState(() => _attempted = true);
@@ -158,7 +150,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
     }
   }
 
-  // ── UI ────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -184,23 +175,18 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
 
-        // ── 1. Route summary ──────────────────────────────────────────
         SectionHeader(
           title: s.yourRoute,
           subtitle: s.yourRouteSub,
         ),
         _routeCard(),
         const SizedBox(height: 18),
-
-        // ── 2. Pickup location ─────────────────────────────────────────
         SectionHeader(
           title: s.yourPickupAddress,
           subtitle: s.yourPickupAddressSub,
         ),
         _buildLocationCard(),
         const SizedBox(height: 18),
-
-        // ── 3. Summary ─────────────────────────────────────────────────
         _summaryCard(),
         const SizedBox(height: 18),
 
@@ -213,8 +199,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
       ],
     );
   }
-
-  // ── Route card ────────────────────────────────────────────────────
 
   Widget _routeCard() {
     final s = S.of(context);
@@ -313,9 +297,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
       ),
     );
   }
-
-  // ── Location card ─────────────────────────────────────────────────
-
   Widget _buildLocationCard() {
     final s = S.of(context);
     final areaError = _attempted && !_areaFilled;
@@ -349,7 +330,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Street name (optional)
           _locationField(
             controller: _streetCtl,
             label: s.streetName,
@@ -357,8 +337,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
             icon:  Icons.signpost_rounded,
           ),
           const SizedBox(height: 14),
-
-          // Building number (optional)
           _locationField(
             controller: _buildingCtl,
             label: s.buildingNumber,
@@ -366,7 +344,6 @@ class _SegmentBookingScreenState extends State<SegmentBookingScreen> {
             icon:  Icons.apartment_rounded,
           ),
 
-          // Live address preview
           if (_areaFilled) ...[
             const SizedBox(height: 14),
             Container(

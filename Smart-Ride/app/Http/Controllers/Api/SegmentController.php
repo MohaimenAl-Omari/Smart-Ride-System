@@ -13,22 +13,9 @@ use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
 use RuntimeException;
 
-/**
- * HTTP layer for the Ride Segmentation feature.
- *
- * Routes (added in routes/api.php):
- *   GET  /api/trips/{trip}/segments
- *   POST /api/driver/trips/{trip}/segments/generate
- *   POST /api/driver/trips/{trip}/stops          (add an intermediate stop)
- *   GET  /api/segments/search?from=&to=&seats=
- *   POST /api/segments/book                       (passenger)
- *   POST /api/segments/bookings/{booking}/cancel  (passenger)
- */
 class SegmentController extends Controller
 {
     public function __construct(private TripSegmentationService $segments) {}
-
-    /** GET /trips/{trip}/segments */
     public function index(Trip $trip): JsonResponse
     {
         return response()->json([
@@ -38,7 +25,6 @@ class SegmentController extends Controller
         ]);
     }
 
-    /** POST /driver/trips/{trip}/segments/generate */
     public function generate(Request $request, Trip $trip): JsonResponse
     {
         $user = $request->user();
@@ -81,7 +67,6 @@ class SegmentController extends Controller
         ]);
     }
 
-    /** POST /driver/trips/{trip}/stops */
     public function addStop(Request $request, Trip $trip): JsonResponse
     {
         $user = $request->user();
@@ -118,7 +103,6 @@ class SegmentController extends Controller
         ]);
     }
 
-    /** GET /segments/search?from=&to=&seats= */
     public function search(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -151,8 +135,8 @@ class SegmentController extends Controller
             return [
                 'trip'            => $trip,
                 'route'           => $route,
-                'total_price'     => $route->sum(fn ($s) => (float) $s->price) * $seats,
-                'total_minutes'   => $route->sum(fn ($s) => (int) $s->estimated_minutes),
+                'total_price'     => $route->sum(fn($s) => (float) $s->price) * $seats,
+                'total_minutes'   => $route->sum(fn($s) => (int) $s->estimated_minutes),
                 'seats_requested' => $seats,
             ];
         });
@@ -163,7 +147,6 @@ class SegmentController extends Controller
         ]);
     }
 
-    /** POST /segments/book */
     public function book(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -220,7 +203,6 @@ class SegmentController extends Controller
         ]);
     }
 
-    /** POST /segments/bookings/{booking}/cancel */
     public function cancel(Request $request, Booking $booking): JsonResponse
     {
         if ($booking->passenger_id !== $request->user()->id) {

@@ -1,16 +1,3 @@
-// NotificationsScreen — F5: Notification System
-//
-// Displays the user's real notification history fetched from
-//   GET /api/notifications
-// and keeps the unread count badge in sync via NotificationController (GetX).
-//
-// Features:
-//   • All / Unread tab filter
-//   • Swipe-to-dismiss (DELETE /api/notifications/{id})
-//   • Mark-all-read button (POST /api/notifications/mark-all-read)
-//   • Pull-to-refresh
-//   • Tap a card to mark it read (POST /api/notifications/{id}/read)
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -38,8 +25,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     super.initState();
     _tab = TabController(length: 2, vsync: this);
     _tab.addListener(() => setState(() {}));
-
-    // Reuse or create the GetX controller for this user session.
     if (Get.isRegistered<NotificationController>()) {
       _ctl = Get.find<NotificationController>();
     } else {

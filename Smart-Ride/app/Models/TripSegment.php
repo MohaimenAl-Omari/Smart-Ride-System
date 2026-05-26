@@ -26,11 +26,6 @@ class TripSegment extends Model
         'price'             => 'decimal:2',
         'estimated_minutes' => 'integer',
     ];
-
-    // ---------------------------------------------------------------
-    // Relationships
-    // ---------------------------------------------------------------
-
     public function trip(): BelongsTo
     {
         return $this->belongsTo(Trip::class);
@@ -43,19 +38,12 @@ class TripSegment extends Model
             ->withTimestamps();
     }
 
-    // ---------------------------------------------------------------
-    // Helpers (encapsulation of seat math)
-    // ---------------------------------------------------------------
-
     public function hasAvailableSeats(int $seats): bool
     {
         return $this->seats_available >= $seats;
     }
 
-    /**
-     * Reserve seats on this segment. Caller must wrap in a DB
-     * transaction together with creating the booking row.
-     */
+
     public function reserveSeats(int $seats): void
     {
         if (!$this->hasAvailableSeats($seats)) {

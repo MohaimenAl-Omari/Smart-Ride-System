@@ -11,8 +11,6 @@ class PaymentScreen extends StatefulWidget {
   final String tripRoute;
   final int seats;
   final VoidCallback? onSuccess;
-
-  /// Optional: when provided, the chosen payment method is saved to the server.
   final int? bookingId;
   final String? token;
 
@@ -39,32 +37,21 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   _Method _method = _Method.cash;
   _Stage _stage = _Stage.method;
-
-  // Which method tile has its "Why?" panel open
   _Method? _expandedWhy;
-
-  // Pre-filled demo card
   final _cardNumCtl = TextEditingController(text: '4242 4242 4242 4242');
   final _cardHolderCtl = TextEditingController(text: 'SMART RIDE');
   final _expiryCtl = TextEditingController(text: '12/28');
   final _cvvCtl = TextEditingController(text: '123');
   final _formKey = GlobalKey<FormState>();
-
-  // Processing animation
   late AnimationController _spinCtl;
   late Animation<double> _spinAnim;
   late AnimationController _checkCtl;
   late Animation<double> _checkAnim;
-
-  // Simulated wallet balance
   final double _walletBalance = 8.75;
 
   int _processingStep = 0;
-  late String _txnId; // generated on payment start
-
-  // 4 processing steps — labels are localized at display time
+  late String _txnId;
   static const int _kStepCount = 4;
-
   @override
   void initState() {
     super.initState();
@@ -99,8 +86,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     final code = List.generate(8, (_) => rng.nextInt(10)).join();
     return 'TXN-SR-$code';
   }
-
-  /// Returns the localized label for each processing step index.
   String _stepLabel(int i, S s) {
     switch (i) {
       case 0: return s.payStep1;
@@ -109,8 +94,6 @@ class _PaymentScreenState extends State<PaymentScreen>
       default: return s.payStep4;
     }
   }
-
-  // ─── Payment flow ────────────────────────────────────────────────────────
 
   Future<void> _startProcessing() async {
     HapticFeedback.lightImpact();
@@ -122,11 +105,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       AppToast.show(context, S.of(context).insufficientBalance, error: true);
       return;
     }
-
-    // Generate a fresh transaction ID for this attempt
     _txnId = _generateTxnId();
-
-    // Simulate a ~20% chance of payment failure for demo realism
     final willFail = math.Random().nextDouble() < 0.20;
 
     setState(() {
@@ -139,12 +118,9 @@ class _PaymentScreenState extends State<PaymentScreen>
       if (!mounted) return;
       setState(() => _processingStep = i);
     }
-
-    // Mark all steps as done before transitioning
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
-    setState(() => _processingStep = _kStepCount); // all steps completed
-
+    setState(() => _processingStep = _kStepCount);
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
 
@@ -157,8 +133,6 @@ class _PaymentScreenState extends State<PaymentScreen>
       setState(() => _stage = _Stage.success);
       _checkCtl.forward();
       HapticFeedback.heavyImpact();
-
-      // Save the chosen payment method to the server (best-effort).
       final bid   = widget.bookingId;
       final token = widget.token;
       if (bid != null && token != null) {
@@ -177,9 +151,6 @@ class _PaymentScreenState extends State<PaymentScreen>
       widget.onSuccess?.call();
     }
   }
-
-  // ─── Build ───────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -204,9 +175,6 @@ class _PaymentScreenState extends State<PaymentScreen>
       ),
     );
   }
-
-  // ─── Stage 1: Method selection ───────────────────────────────────────────
-
   Widget _methodPage(S s) {
     return Column(
       key: const ValueKey('method'),
@@ -225,7 +193,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.6)),
               const SizedBox(height: 10),
-              // ── Cash ──
               _methodTile(
                 icon: Icons.payments_rounded,
                 color: AppColors.emerald,
@@ -239,7 +206,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                 s: s,
               ),
               const SizedBox(height: 10),
-              // ── Card ──
               _methodTile(
                 icon: Icons.credit_card_rounded,
                 color: AppColors.primary,
@@ -253,7 +219,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                 s: s,
               ),
               const SizedBox(height: 10),
-              // ── Wallet ──
               _methodTile(
                 icon: Icons.account_balance_wallet_rounded,
                 color: AppColors.sky,
@@ -325,7 +290,6 @@ class _PaymentScreenState extends State<PaymentScreen>
         ),
         child: Column(
           children: [
-            // ── Main row ──
             Padding(
               padding: const EdgeInsets.all(14),
               child: Row(
@@ -374,7 +338,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Radio circle
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     width: 22,
@@ -397,8 +360,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                 ],
               ),
             ),
-
-            // ── "Why?" toggle button ──
             if (!disabled)
               GestureDetector(
                 onTap: () {
@@ -449,7 +410,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                 ),
               ),
 
-            // ── Expanded "Why?" panel ──
             AnimatedSize(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeInOut,
@@ -491,8 +451,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  // ─── Stage 2: Card / Wallet details ─────────────────────────────────────
-
   Widget _detailsPage(S s) {
     return Column(
       key: const ValueKey('details'),
@@ -528,7 +486,6 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   List<Widget> _cardFields(S s) {
     return [
-      // Section header
       Text(s.payByCard,
           style: const TextStyle(
               color: AppColors.textSecondary,
@@ -537,7 +494,6 @@ class _PaymentScreenState extends State<PaymentScreen>
               letterSpacing: 0.6)),
       const SizedBox(height: 10),
 
-      // Demo notice banner
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
@@ -573,7 +529,6 @@ class _PaymentScreenState extends State<PaymentScreen>
       ),
       const SizedBox(height: 12),
 
-      // Live card preview
       _cardPreview(),
       const SizedBox(height: 16),
 
@@ -835,8 +790,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  // ─── Stage 3: Processing ─────────────────────────────────────────────────
-
   Widget _processingPage(S s) {
     return Center(
       key: const ValueKey('processing'),
@@ -874,7 +827,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                     letterSpacing: 0.5)),
             const SizedBox(height: 28),
             ...List.generate(_kStepCount, (i) {
-              // _processingStep == _kStepCount means all steps are done
               final done = i < _processingStep;
               final current = i == _processingStep;
               return Padding(
@@ -933,8 +885,6 @@ class _PaymentScreenState extends State<PaymentScreen>
       ),
     );
   }
-
-  // ─── Stage 4: Success ────────────────────────────────────────────────────
 
   Widget _successPage(S s) {
     return Center(
@@ -1033,8 +983,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  // ─── Stage 5: Failed ─────────────────────────────────────────────────────
-
   Widget _failedPage(S s) {
     return Center(
       key: const ValueKey('failed'),
@@ -1090,8 +1038,6 @@ class _PaymentScreenState extends State<PaymentScreen>
       ),
     );
   }
-
-  // ─── Shared helpers ──────────────────────────────────────────────────────
 
   Widget _appBar(String title, {bool canPop = false, VoidCallback? onBack}) {
     return Padding(
@@ -1190,8 +1136,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 }
-
-// ─── Input formatters ────────────────────────────────────────────────────────
 
 class _CardNumberFormatter extends TextInputFormatter {
   @override

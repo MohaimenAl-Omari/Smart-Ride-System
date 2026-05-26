@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constant.dart';
 import '../../core/localization.dart';
 import '../../models/user-model.dart';
@@ -97,8 +98,6 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
         dt != null &&
         now.isAfter(dt.subtract(const Duration(minutes: 60))) &&
         now.isBefore(dt.add(const Duration(minutes: 30)));
-
-    // Cannot cancel once checked in (enforced on both client and server)
     final canCancel = !_checkedIn &&
         (b.status == 'pending' || b.status == 'accepted');
     final canRate = b.status == 'completed' && !_ratingSent;
@@ -352,44 +351,158 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     );
   }
 
+  Future<void> _callPhone(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cannot dial $phone')),
+      );
+    }
+  }
+
+  void _showPhoneDialog(String name, String phone) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(name,
+            style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w800)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.phone_rounded, color: AppColors.emerald, size: 36),
+            const SizedBox(height: 10),
+            Text(phone,
+                style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2)),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Dismiss',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.emerald,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.phone_rounded, size: 16),
+            label: const Text('Call'),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _callPhone(phone);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _driverCard() {
+    final phone = b.driverPhone;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: AppDecor.card(),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InitialAvatar(name: b.driverName ?? 'Driver', size: 44),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(b.driverName ?? 'Driver',
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text(
-                    [b.carModel, b.carPlate]
-                        .where((e) => e != null && e.isNotEmpty)
-                        .join(' · '),
-                    style: const TextStyle(
-                        color: AppColors.textSecondary, fontSize: 12)),
-              ],
-            ),
+          Row(
+            children: [
+              InitialAvatar(name: b.driverName ?? 'Driver', size: 44),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(b.driverName ?? 'Driver',
+                        style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 2),
+                    Text(
+                        [b.carModel, b.carPlate]
+                            .where((e) => e != null && e.isNotEmpty)
+                            .join(' · '),
+                        style: const TextStyle(
+                            color: AppColors.textSecondary, fontSize: 12)),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: phone != null && phone.isNotEmpty
+                    ? () => _showPhoneDialog(b.driverName ?? 'Driver', phone)
+                    : null,
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: phone != null && phone.isNotEmpty
+                        ? AppColors.emeraldSoft
+                        : AppColors.surfaceMuted,
+                    border: Border.all(
+                        color: phone != null && phone.isNotEmpty
+                            ? AppColors.emerald.withOpacity(0.4)
+                            : AppColors.border),
+                  ),
+                  child: Icon(Icons.phone_rounded,
+                      color: phone != null && phone.isNotEmpty
+                          ? AppColors.emerald
+                          : AppColors.textMuted,
+                      size: 16),
+                ),
+              ),
+            ],
           ),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: AppColors.emeraldSoft,
-              border: Border.all(color: AppColors.emerald.withOpacity(0.4)),
+          if (phone != null && phone.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => _showPhoneDialog(b.driverName ?? 'Driver', phone),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.emeraldSoft,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.emerald.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.phone_rounded,
+                        color: AppColors.emerald, size: 14),
+                    const SizedBox(width: 8),
+                    Text(phone,
+                        style: const TextStyle(
+                            color: AppColors.emerald,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5)),
+                    const Spacer(),
+                    const Text('Tap to call',
+                        style: TextStyle(
+                            color: AppColors.emerald,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
             ),
-            child: const Icon(Icons.phone_rounded,
-                color: AppColors.emerald, size: 16),
-          ),
+          ],
         ],
       ),
     );

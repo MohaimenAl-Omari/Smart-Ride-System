@@ -69,8 +69,6 @@ class TripController {
     String? carPlate,
     String? notes,
     List<String> stops = const [],
-    // F1/F8 — Per-segment prices, one per consecutive stop pair.
-    // e.g. [3.0, 2.0] means Irbid→Jarash = 3 JOD, Jarash→Amman = 2 JOD.
     List<double> segmentPrices = const [],
   }) async {
     final body = <String, dynamic>{
@@ -151,7 +149,7 @@ class DriverHistoryTrip {
   final int seatsTotal;
   final double pricePerSeat;
   final String status;
-  final int passengersCount; // sum of seats sold
+  final int passengersCount;
   final double totalEarnings;
   final List<String> stops;
 

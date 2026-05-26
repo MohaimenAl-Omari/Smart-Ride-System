@@ -1,12 +1,3 @@
-// Deprecated. Kept as a thin alias for backward compatibility.
-//
-// The original prototype "HomeScreen" with hard-coded trip mocks has been
-// replaced by role-aware screens:
-//   - PassengerHome  (lib/screens/passenger/passenger_home.dart)
-//   - DriverHome     (lib/screens/driver/driver_home.dart)
-//
-// Routing is handled by LoginScreen._routeForRole.
-
 import 'package:flutter/material.dart';
 import '../../models/user-model.dart';
 import '../passenger/passenger_home.dart';

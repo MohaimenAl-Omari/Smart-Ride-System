@@ -13,36 +13,19 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
 
-/**
- * Ride Segmentation / Multi-Stop Booking — business logic.
- *
- * Encapsulates the seven required operations:
- *   - createTrip(), addStop(), generateSegments(), searchAvailableTrips(),
- *     bookSegment(), cancelBooking(), calculateSegmentPrice()
- *
- * The corresponding HTTP layer is in App\Http\Controllers\Api\SegmentController.
- */
 class TripSegmentationService
 {
-    // ---------------------------------------------------------------
-    // createTrip
-    // ---------------------------------------------------------------
-
-    /**
-     * Create a trip and immediately seed its origin/destination stops.
-     * Caller can then addStop() for any intermediate cities before
-     * generateSegments() is called.
-     *
-     * @param  array<string,mixed>  $data
-     */
     public function createTrip(User $driver, array $data): Trip
     {
         if ($driver->role !== 'driver') {
             throw new InvalidArgumentException('Only drivers can create trips.');
         }
         $this->requireFields($data, [
-            'origin', 'destination', 'departure_at',
-            'seats_total', 'price_per_seat',
+            'origin',
+            'destination',
+            'departure_at',
+            'seats_total',
+            'price_per_seat',
         ]);
         if ($data['origin'] === $data['destination']) {
             throw new InvalidArgumentException('Origin and destination must differ.');
@@ -83,14 +66,7 @@ class TripSegmentationService
         });
     }
 
-    // ---------------------------------------------------------------
-    // addStop
-    // ---------------------------------------------------------------
 
-    /**
-     * Insert an intermediate stop into a trip. The new stop is
-     * appended just before the destination.
-     */
     public function addStop(Trip $trip, string $stopName): TripStop
     {
         $stopName = trim($stopName);
@@ -121,32 +97,14 @@ class TripSegmentationService
                 'trip_id'     => $trip->id,
                 'name'        => $stopName,
                 'order_index' => $destStop ? $destStop->order_index - 1
-                                           : $trip->stops()->count(),
+                    : $trip->stops()->count(),
             ]);
         });
     }
 
-    // ---------------------------------------------------------------
-    // generateSegments
-    // ---------------------------------------------------------------
-
-    /**
-     * Build (or rebuild) the trip_segments rows from the trip's ordered
-     * stops. Safe to call multiple times before any bookings exist.
-     *
-     * @param  Trip               $trip
-     * @param  array<int, float>  $segmentPrices  Optional. Ordered prices
-     *         per segment. If provided, the i-th price is applied to the
-     *         i-th leg (e.g. [3.0, 2.0] for Irbid→Jarash=3, Jarash→Amman=2).
-     *         Must have exactly (stops - 1) elements if supplied.
-     *         Falls back to price_per_seat when omitted or wrong length.
-     * @return Collection<int, TripSegment>
-     */
     public function generateSegments(Trip $trip, array $segmentPrices = []): Collection
     {
         return DB::transaction(function () use ($trip, $segmentPrices) {
-            // Refuse to regenerate if there are already active bookings,
-            // since that would invalidate seat math.
             $hasActive = $trip->bookings()
                 ->whereIn('status', ['pending', 'accepted'])
                 ->exists();
@@ -195,31 +153,11 @@ class TripSegmentationService
         });
     }
 
-    // ---------------------------------------------------------------
-    // calculateSegmentPrice
-    // ---------------------------------------------------------------
-
-    /**
-     * Simple, beginner-friendly model: every leg costs the trip's
-     * `price_per_seat` for one seat. This is also where you could plug
-     * in distance-based pricing later.
-     */
     public function calculateSegmentPrice(Trip $trip): float
     {
         return (float) $trip->price_per_seat;
     }
 
-    // ---------------------------------------------------------------
-    // searchAvailableTrips
-    // ---------------------------------------------------------------
-
-    /**
-     * Find every scheduled trip whose ordered stop list contains
-     * `$from` followed (later) by `$to`, with enough seats free on
-     * every segment in between.
-     *
-     * @return Collection<int, Trip>
-     */
     public function searchAvailableTrips(string $from, string $to, int $seats = 1): Collection
     {
         if ($from === '' || $to === '' || $from === $to) {
@@ -244,16 +182,6 @@ class TripSegmentationService
         })->values();
     }
 
-    // ---------------------------------------------------------------
-    // bookSegment
-    // ---------------------------------------------------------------
-
-    /**
-     * Book a sub-route `$from -> $to` on `$trip` for `$passenger`.
-     * Validates the route, ensures every overlapping segment has
-     * room, blocks duplicate active bookings, and reserves the seats
-     * inside a single DB transaction.
-     */
     public function bookSegment(
         User $passenger,
         Trip $trip,
@@ -272,15 +200,13 @@ class TripSegmentationService
         }
 
         return DB::transaction(function () use ($passenger, $trip, $from, $to, $seats, $locationArea, $locationStreet, $locationBuilding) {
-
-            // Lock the relevant segments to prevent over-booking races.
             $route = TripSegment::where('trip_id', $trip->id)
                 ->orderBy('order_index')
                 ->lockForUpdate()
                 ->get();
 
-            $startIdx = $route->search(fn ($s) => $s->start_stop === $from);
-            $endIdx   = $route->search(fn ($s) => $s->end_stop === $to);
+            $startIdx = $route->search(fn($s) => $s->start_stop === $from);
+            $endIdx   = $route->search(fn($s) => $s->end_stop === $to);
 
             if ($startIdx === false || $endIdx === false || $startIdx > $endIdx) {
                 throw new InvalidArgumentException(
@@ -289,8 +215,6 @@ class TripSegmentationService
             }
 
             $sub = $route->slice($startIdx, $endIdx - $startIdx + 1)->values();
-
-            // Duplicate guard.
             $duplicate = Booking::where('trip_id', $trip->id)
                 ->where('passenger_id', $passenger->id)
                 ->where('pickup_stop', $from)
@@ -302,11 +226,6 @@ class TripSegmentationService
                     'You already have an active booking for this route.'
                 );
             }
-
-            // Capacity check on every overlapping leg.
-            // Note: seats are NOT reserved yet — they are only reserved when
-            // the driver accepts the booking. This keeps the trip visible to
-            // all passengers while their requests are pending.
             foreach ($sub as $seg) {
                 if (!$seg->hasAvailableSeats($seats)) {
                     throw new RuntimeException(
@@ -315,9 +234,8 @@ class TripSegmentationService
                 }
             }
 
-            $tripPrice = round($sub->sum(fn ($s) => (float) $s->price) * $seats, 2);
+            $tripPrice = round($sub->sum(fn($s) => (float) $s->price) * $seats, 2);
 
-            // ── No-show debt: roll outstanding balance into this booking ──
             $debtCarried     = 0.00;
             $passengerBalance = (float) $passenger->balance;
             if ($passengerBalance < 0) {
@@ -338,8 +256,6 @@ class TripSegmentationService
                 'location_street'   => $locationStreet,
                 'location_building' => $locationBuilding,
             ]);
-
-            // Pivot rows so we know exactly which legs the booking holds.
             $pivot = [];
             foreach ($sub as $seg) {
                 $pivot[$seg->id] = ['seats' => $seats];
@@ -350,13 +266,6 @@ class TripSegmentationService
         });
     }
 
-    // ---------------------------------------------------------------
-    // cancelBooking
-    // ---------------------------------------------------------------
-
-    /**
-     * Release the seats this booking occupies and mark it cancelled.
-     */
     public function cancelBooking(Booking $booking): Booking
     {
         if (in_array($booking->status, ['cancelled', 'completed', 'rejected'], true)) {
@@ -364,34 +273,23 @@ class TripSegmentationService
                 "Booking is already {$booking->status}."
             );
         }
-
-        // Cannot cancel after the passenger has already checked in
         if ($booking->is_checked_in) {
             throw new InvalidArgumentException(
                 'You cannot cancel a booking after you have already checked in.'
             );
         }
-
         return DB::transaction(function () use ($booking) {
-            // Only release seats if the booking was accepted — seats are
-            // reserved at acceptance time, not at booking creation.
             if ($booking->status === 'accepted') {
                 $segments = $booking->segments()->lockForUpdate()->get();
                 foreach ($segments as $seg) {
-                    /** @var int $seats */
                     $seats = (int) $seg->pivot->seats;
                     $seg->releaseSeats($seats);
                 }
 
-                // Re-sync the trip-level display counter.
                 $minAvail = TripSegment::where('trip_id', $booking->trip_id)->min('seats_available');
                 if ($minAvail !== null) {
                     $booking->trip()->update(['seats_available' => $minAvail]);
                 }
-
-                // ── Debt re-application on cancellation ───────────────────
-                // Debt was cleared from balance when accepted; put it back
-                // now that the passenger is no longer paying via this booking.
                 if ((float) $booking->debt_carried > 0) {
                     $booking->passenger()->first()->decrement('balance', (float) $booking->debt_carried);
                 }
@@ -403,21 +301,11 @@ class TripSegmentationService
         });
     }
 
-    // ---------------------------------------------------------------
-    // Internal helpers
-    // ---------------------------------------------------------------
-
-    /**
-     * Returns the contiguous list of TripSegments needed to travel
-     * `$from -> $to` on `$trip`. Empty when the route is invalid.
-     *
-     * @return Collection<int, TripSegment>
-     */
     public function segmentsBetween(Trip $trip, string $from, string $to): Collection
     {
         $segs = $trip->segments()->orderBy('order_index')->get();
-        $startIdx = $segs->search(fn ($s) => $s->start_stop === $from);
-        $endIdx   = $segs->search(fn ($s) => $s->end_stop === $to);
+        $startIdx = $segs->search(fn($s) => $s->start_stop === $from);
+        $endIdx   = $segs->search(fn($s) => $s->end_stop === $to);
         if ($startIdx === false || $endIdx === false || $startIdx > $endIdx) {
             return new Collection();
         }
@@ -426,22 +314,19 @@ class TripSegmentationService
 
     private function estimateTotalMinutes(Trip $trip): int
     {
-        // No total time column today; use a sensible default of 60 min
-        // per leg unless notes contain a hint. Drivers can edit later.
         $points = $trip->orderedPoints();
         $legs = max(1, count($points) - 1);
         return 60 * $legs;
     }
 
-    /**
-     * @param  array<string,mixed>  $data
-     * @param  array<int,string>    $required
-     */
+
     private function requireFields(array $data, array $required): void
     {
         foreach ($required as $field) {
-            if (!array_key_exists($field, $data) || $data[$field] === null
-                || $data[$field] === '') {
+            if (
+                !array_key_exists($field, $data) || $data[$field] === null
+                || $data[$field] === ''
+            ) {
                 throw new InvalidArgumentException("Missing field: {$field}");
             }
         }

@@ -1,11 +1,3 @@
-// DriverProfileScreen — F4: Driver Rating Visibility
-//
-// Shows the driver's profile (name, city, car), average star rating,
-// total review count, and the last 60 individual passenger reviews.
-//
-// Navigation: tapping a driver's name in TripDetailsScreen pushes this.
-// Data source: GET /api/drivers/{id}/ratings
-
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../../core/constant.dart';
@@ -14,13 +6,8 @@ import '../../models/driver_rating_model.dart';
 import '../../controllers/rating_controller.dart';
 
 class DriverProfileScreen extends StatefulWidget {
-  /// The ID of the driver whose profile we are viewing.
   final int driverId;
-
-  /// Name of the driver — shown immediately while data loads.
   final String driverName;
-
-  /// The current user's bearer token for the API call.
   final UserModel viewer;
 
   const DriverProfileScreen({
@@ -85,10 +72,6 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     );
   }
 
-  // ---------------------------------------------------------------
-  // AppBar
-  // ---------------------------------------------------------------
-
   Widget _appBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 16, 8),
@@ -118,21 +101,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     );
   }
 
-  // ---------------------------------------------------------------
-  // Main content
-  // ---------------------------------------------------------------
-
   Widget _buildContent(DriverRatingResponse data) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
       children: [
-        // Hero card: avatar + name + aggregate rating
         _heroCard(data),
         const SizedBox(height: 18),
-        // Rating breakdown bar
         _ratingBreakdown(data),
         const SizedBox(height: 18),
-        // Reviews list header
         SectionHeader(
           title: 'Passenger Reviews',
           subtitle: '${data.count} review${data.count != 1 ? 's' : ''}',
@@ -151,18 +127,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       ],
     );
   }
-
-  // ---------------------------------------------------------------
-  // Hero card
-  // ---------------------------------------------------------------
-
   Widget _heroCard(DriverRatingResponse data) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: AppDecor.card(),
       child: Column(
         children: [
-          // Large avatar
           Container(
             width: 80,
             height: 80,
@@ -203,8 +173,6 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
           ),
           const SizedBox(height: 18),
-
-          // Average rating stars
           if (data.count > 0) ...[
             RatingBarIndicator(
               rating: data.average,
@@ -231,7 +199,6 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               ),
             ),
           ] else ...[
-            // No ratings yet placeholder
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -250,15 +217,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       ),
     );
   }
-
-  // ---------------------------------------------------------------
-  // Rating breakdown (star distribution bars)
-  // ---------------------------------------------------------------
-
   Widget _ratingBreakdown(DriverRatingResponse data) {
     if (data.count == 0) return const SizedBox.shrink();
-
-    // Count reviews per star level (1–5).
     final counts = List.filled(5, 0);
     for (final r in data.reviews) {
       final i = (r.stars - 1).clamp(0, 4);
@@ -329,11 +289,6 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       ),
     );
   }
-
-  // ---------------------------------------------------------------
-  // Individual review card
-  // ---------------------------------------------------------------
-
   Widget _reviewCard(DriverReviewModel r) {
     final dateStr = r.createdAt != null
         ? '${r.createdAt!.day}/${r.createdAt!.month}/${r.createdAt!.year}'
@@ -405,11 +360,6 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       ),
     );
   }
-
-  // ---------------------------------------------------------------
-  // Error state
-  // ---------------------------------------------------------------
-
   Widget _errorState() {
     return const Padding(
       padding: EdgeInsets.all(24),

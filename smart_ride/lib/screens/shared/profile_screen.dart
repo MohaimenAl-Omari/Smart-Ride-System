@@ -504,8 +504,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _toggleRow(IconData icon, String label, bool initial) {
     return _ToggleRow(icon: icon, label: label, initial: initial);
   }
-
-  /// A row that opens a sub-screen (Edit profile, Contact us…)
   Widget _actionRow(IconData icon, String label, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,

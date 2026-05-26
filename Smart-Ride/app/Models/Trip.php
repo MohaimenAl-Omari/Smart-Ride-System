@@ -65,23 +65,14 @@ class Trip extends Model
         return $this->hasMany(TripSegment::class)->orderBy('order_index');
     }
 
-    /**
-     * Convenience: ordered list of point names (origin + stops + destination).
-     *
-     * @return array<int, string>
-     */
+  
     public function orderedPoints(): array
     {
         $stops = $this->stops()->orderBy('order_index')->pluck('name')->all();
-
-        // The existing TripController@store seeds origin + destination
-        // into the trip_stops table already, so just return that list.
         if (!empty($stops) && $stops[0] === $this->origin
             && end($stops) === $this->destination) {
             return $stops;
         }
-
-        // Otherwise build the full ordered list ourselves.
         return array_values(array_merge(
             [$this->origin],
             array_values(array_filter(

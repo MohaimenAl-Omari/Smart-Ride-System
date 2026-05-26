@@ -40,20 +40,11 @@ class User extends Authenticatable
         'balance'     => 'decimal:2',
     ];
 
-    /**
-     * Computed fields appended to the JSON representation so the
-     * Flutter app can show a driver's reputation without an extra
-     * API call.
-     */
     protected $appends = [
         'rating_average',
         'ratings_count',
         'image_url',
     ];
-
-    // ---------------------------------------------------------------
-    // Relationships
-    // ---------------------------------------------------------------
 
     public function certificate(): HasOne
     {
@@ -84,10 +75,6 @@ class User extends Authenticatable
     {
         return $this->hasMany(ContactMessage::class);
     }
-
-    // ---------------------------------------------------------------
-    // Auth helpers
-    // ---------------------------------------------------------------
 
     public static function registerUser(array $data): self
     {
@@ -129,15 +116,6 @@ class User extends Authenticatable
         }
         return self::where('api_token', hash('sha256', $plainToken))->first();
     }
-
-    // ---------------------------------------------------------------
-    // Accessors
-    // ---------------------------------------------------------------
-
-    /**
-     * Average star rating for a driver (1..5). Returns 0 when there
-     * are no ratings yet.
-     */
     public function getRatingAverageAttribute(): float
     {
         if ($this->role !== 'driver') {
@@ -155,10 +133,6 @@ class User extends Authenticatable
         return (int) $this->ratingsReceived()->count();
     }
 
-    /**
-     * Public URL for the user's profile image, when one was uploaded
-     * via the storage:link disk. Frontend can use this directly.
-     */
     public function getImageUrlAttribute(): ?string
     {
         if (!$this->image) {

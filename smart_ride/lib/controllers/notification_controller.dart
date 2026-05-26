@@ -51,7 +51,6 @@ class NotificationController extends GetxController {
             int.tryParse((data['unread_count'] ?? 0).toString()) ?? 0;
       }
     } catch (_) {
-      // Fail silently — UI shows empty state.
     } finally {
       loading.value = false;
     }

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constant.dart';
 import '../../core/localization.dart';
 
-/// Full Privacy Policy screen with sectioned layout, bilingual support,
-/// and a contact CTA at the bottom.
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 

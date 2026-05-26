@@ -40,15 +40,12 @@ class _PassengerHomeState extends State<PassengerHome>
   List<TripModel> _trips = [];
   List<BookingModel> _bookings = [];
 
-  /// Mutable copy of the user — refreshed from /api/me on every load
-  /// so the debt balance banner always reflects the latest server state.
   late UserModel _currentUser;
 
   @override
   void initState() {
     super.initState();
     _currentUser = widget.user;
-    // Start notification polling immediately so the badge stays live.
     _notifCtl = Get.isRegistered<NotificationController>()
         ? Get.find<NotificationController>()
         : Get.put(NotificationController(token: widget.user.token));
@@ -56,7 +53,6 @@ class _PassengerHomeState extends State<PassengerHome>
   }
 
   Future<void> _refreshAll() async {
-    // Refresh user balance first, then trips and bookings in parallel
     final fresh = await _authCtl.getMe(widget.user.token);
     if (mounted && fresh != null) {
       setState(() => _currentUser = fresh);
@@ -198,7 +194,6 @@ class _PassengerHomeState extends State<PassengerHome>
     );
   }
 
-  /// Prominent debt card shown when the passenger has an unpaid no-show penalty.
   Widget _buildDebtBanner() {
     final debt = _currentUser.balance.abs();
     return Container(

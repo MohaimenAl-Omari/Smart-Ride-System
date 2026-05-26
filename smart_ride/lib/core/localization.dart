@@ -48,18 +48,13 @@ class LangScope extends InheritedWidget {
 class S {
   final String code;
   const S(this.code);
-
   static S of(BuildContext context) => S(LangScope.codeOf(context));
-
   bool get isAr => code == 'ar';
   String _t(String en, String ar) => isAr ? ar : en;
-
-  // Brand
   String get appName => _t('Smart Ride', 'سمارت رايد');
   String get appTagline =>
       _t('Smart carpool · Flexible stops', 'كاربول ذكي · محطات مرنة');
 
-  // Common
   String get ok => _t('OK', 'حسناً');
   String get cancel => _t('Cancel', 'إلغاء');
   String get confirm => _t('Confirm', 'تأكيد');
