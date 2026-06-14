@@ -13,6 +13,9 @@ class AuthResult {
 }
 
 class AuthController {
+  final http.Client _client;
+  AuthController({http.Client? client}) : _client = client ?? http.Client();
+
   Future<AuthResult> register({
     required String name,
     required String email,
@@ -22,7 +25,7 @@ class AuthController {
     String? city,
   }) async {
     final url = Uri.parse('$baseUrl/register');
-    final response = await http.post(
+    final response = await _client.post(
       url,
       headers: {'Accept': 'application/json'},
       body: {
@@ -70,7 +73,7 @@ class AuthController {
     required String password,
   }) async {
     final url = Uri.parse('$baseUrl/login');
-    final response = await http.post(
+    final response = await _client.post(
       url,
       headers: {'Accept': 'application/json'},
       body: {'email': email, 'password': password},
@@ -132,7 +135,7 @@ class AuthController {
 
   Future<UserModel?> getMe(String token) async {
     try {
-      final res = await http.get(
+      final res = await _client.get(
         Uri.parse('$baseUrl/me'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -151,7 +154,7 @@ class AuthController {
     final url = Uri.parse('$baseUrl/logout');
     bool ok = false;
     try {
-      final response = await http.post(
+      final response = await _client.post(
         url,
         headers: {
           'Authorization': 'Bearer $token',

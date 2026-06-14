@@ -4,6 +4,9 @@ import '../core/constant.dart';
 import '../models/driver_rating_model.dart';
 
 class RatingController {
+  final http.Client _client;
+  RatingController({http.Client? client}) : _client = client ?? http.Client();
+
   Map<String, String> _headers(String token) => {
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
@@ -16,7 +19,7 @@ class RatingController {
     required int driverId,
   }) async {
     try {
-      final res = await http.get(
+      final res = await _client.get(
         Uri.parse('$baseUrl/drivers/$driverId/ratings'),
         headers: _headers(token),
       );
@@ -37,7 +40,7 @@ class RatingController {
     String? review,
   }) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/ratings'),
         headers: _headers(token),
         body: jsonEncode({

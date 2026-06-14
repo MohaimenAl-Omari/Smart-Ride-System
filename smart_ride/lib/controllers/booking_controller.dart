@@ -4,6 +4,9 @@ import '../core/constant.dart';
 import '../models/booking_model.dart';
 
 class BookingController {
+  final http.Client _client;
+  BookingController({http.Client? client}) : _client = client ?? http.Client();
+
   Map<String, String> _headers(String token) => {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
@@ -22,7 +25,7 @@ class BookingController {
       if (pickupStop != null && pickupStop.isNotEmpty) 'pickup_stop': pickupStop,
       if (dropoffStop != null && dropoffStop.isNotEmpty) 'dropoff_stop': dropoffStop,
     };
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/bookings'),
       headers: {..._headers(token), 'Content-Type': 'application/json'},
       body: jsonEncode(body),
@@ -35,7 +38,7 @@ class BookingController {
   }
 
   Future<List<BookingModel>> myBookings(String token) async {
-    final res = await http.get(
+    final res = await _client.get(
       Uri.parse('$baseUrl/bookings/mine'),
       headers: _headers(token),
     );
@@ -48,7 +51,7 @@ class BookingController {
   }
 
   Future<List<BookingModel>> driverBookings(String token) async {
-    final res = await http.get(
+    final res = await _client.get(
       Uri.parse('$baseUrl/driver/bookings'),
       headers: _headers(token),
     );
@@ -61,7 +64,7 @@ class BookingController {
   }
 
   Future<bool> accept(String token, int bookingId) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/driver/bookings/$bookingId/accept'),
       headers: _headers(token),
     );
@@ -70,7 +73,7 @@ class BookingController {
   }
 
   Future<bool> reject(String token, int bookingId) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/driver/bookings/$bookingId/reject'),
       headers: _headers(token),
     );
@@ -79,7 +82,7 @@ class BookingController {
   }
 
   Future<bool> cancel(String token, int bookingId) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/bookings/$bookingId/cancel'),
       headers: _headers(token),
     );
@@ -88,7 +91,7 @@ class BookingController {
   }
 
   Future<BookingResult> checkIn(String token, int bookingId) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/bookings/$bookingId/checkin'),
       headers: _headers(token),
     );
@@ -102,7 +105,7 @@ class BookingController {
   }
 
   Future<BookingResult> driverCheckIn(String token, int bookingId) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/driver/bookings/$bookingId/checkin'),
       headers: _headers(token),
     );

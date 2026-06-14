@@ -4,6 +4,9 @@ import '../core/constant.dart';
 import '../models/trip_model.dart';
 
 class TripController {
+  final http.Client _client;
+  TripController({http.Client? client}) : _client = client ?? http.Client();
+
   Map<String, String> _headers(String token) => {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
@@ -23,7 +26,7 @@ class TripController {
     final uri = Uri.parse('$baseUrl/trips/search')
         .replace(queryParameters: params.isEmpty ? null : params);
 
-    final res = await http.get(uri, headers: _headers(token));
+    final res = await _client.get(uri, headers: _headers(token));
     final data = jsonDecode(res.body);
     if (res.statusCode == 200 && data['status'] == true) {
       final list = (data['trips'] as List?) ?? [];
@@ -33,7 +36,7 @@ class TripController {
   }
 
   Future<TripModel?> show({required String token, required int id}) async {
-    final res = await http.get(
+    final res = await _client.get(
       Uri.parse('$baseUrl/trips/$id'),
       headers: _headers(token),
     );
@@ -45,7 +48,7 @@ class TripController {
   }
 
   Future<List<TripModel>> driverTrips(String token) async {
-    final res = await http.get(
+    final res = await _client.get(
       Uri.parse('$baseUrl/driver/trips'),
       headers: _headers(token),
     );
@@ -85,7 +88,7 @@ class TripController {
       if (segmentPrices.isNotEmpty) 'segment_prices': segmentPrices,
     };
 
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/driver/trips'),
       headers: {..._headers(token), 'Content-Type': 'application/json'},
       body: jsonEncode(body),
@@ -98,7 +101,7 @@ class TripController {
   }
 
   Future<bool> cancel(String token, int tripId) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/driver/trips/$tripId/cancel'),
       headers: _headers(token),
     );
@@ -107,7 +110,7 @@ class TripController {
   }
 
   Future<bool> start(String token, int tripId) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/driver/trips/$tripId/start'),
       headers: _headers(token),
     );
@@ -118,7 +121,7 @@ class TripController {
 
 
   Future<List<DriverHistoryTrip>> driverHistory(String token) async {
-    final res = await http.get(
+    final res = await _client.get(
       Uri.parse('$baseUrl/driver/trips/history'),
       headers: _headers(token),
     );
@@ -131,7 +134,7 @@ class TripController {
   }
 
   Future<bool> complete(String token, int tripId) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$baseUrl/driver/trips/$tripId/complete'),
       headers: _headers(token),
     );
