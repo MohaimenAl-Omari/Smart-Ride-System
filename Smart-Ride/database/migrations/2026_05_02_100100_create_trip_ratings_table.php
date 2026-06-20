@@ -25,7 +25,6 @@ return new class extends Migration
             $table->unsignedTinyInteger('stars'); 
             $table->text('review')->nullable();
             $table->timestamps();
-
             $table->unique(['booking_id', 'passenger_id'], 'one_rating_per_booking');
             $table->index(['driver_id']);
         });

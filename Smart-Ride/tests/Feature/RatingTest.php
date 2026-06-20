@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
-use App\Models\Trip;
-use App\Models\TripRating;
 use Tests\TestCase;
 
 class RatingTest extends TestCase
@@ -68,7 +66,7 @@ class RatingTest extends TestCase
 
     public function test_rating_fails_with_invalid_stars(): void
     {
-        [, $pH, , $booking] = $this->completedBookingSetup();
+        [, $pH,, $booking] = $this->completedBookingSetup();
 
         $response = $this->postJson('/api/ratings', [
             'booking_id' => $booking->id,
@@ -80,7 +78,7 @@ class RatingTest extends TestCase
 
     public function test_passenger_cannot_rate_twice(): void
     {
-        [, $pH, , $booking] = $this->completedBookingSetup();
+        [, $pH,, $booking] = $this->completedBookingSetup();
 
         $this->postJson('/api/ratings', ['booking_id' => $booking->id, 'stars' => 4], $pH);
         $response = $this->postJson('/api/ratings', ['booking_id' => $booking->id, 'stars' => 3], $pH);
@@ -90,7 +88,7 @@ class RatingTest extends TestCase
 
     public function test_driver_cannot_submit_rating(): void
     {
-        [, , $driver, $booking] = $this->completedBookingSetup();
+        [,, $driver, $booking] = $this->completedBookingSetup();
         $dH = $this->headersFor($driver);
 
         $response = $this->postJson('/api/ratings', [

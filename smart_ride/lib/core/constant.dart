@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'localization.dart';
 
-const String baseUrl = "http://127.0.0.1:8000/api";
+const String baseUrl = "http://127.0.0.1:8000/api"; // 127.0.0.1 - > 10.0.2.2
 class AppColors {
   static const Color background = Color(0xFFF6F8FB);
   static const Color surface = Color(0xFFFFFFFF);
@@ -10,7 +10,6 @@ class AppColors {
   static const Color surfaceMuted = Color(0xFFE2E8F0);
   static const Color border = Color(0xFFE2E8F0);
   static const Color borderStrong = Color(0xFFCBD5E1);
-
   static const Color primary = Color(0xFF0EA5A4);
   static const Color primaryDark = Color(0xFF0F766E);
   static const Color primarySoft = Color(0xFFCCFBF1);

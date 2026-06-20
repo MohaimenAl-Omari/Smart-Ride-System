@@ -4,15 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Ride Segmentation feature.
- *
- * A "trip" is sliced into ordered legs between consecutive stops, e.g.
- *     Irbid -> Amman -> Aqaba   =>   [Irbid→Amman, Amman→Aqaba]
- *
- * Each leg has its own seat counter so two passengers can occupy the
- * same physical car at different parts of the route.
- */
 return new class extends Migration
 {
     public function up(): void

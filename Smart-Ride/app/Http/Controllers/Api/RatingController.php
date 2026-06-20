@@ -10,13 +10,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-/**
- * Endpoints for the driver-rating feature.
- *
- * Routes:
- *   POST  /api/ratings                       - rate a completed booking
- *   GET   /api/drivers/{driver}/ratings      - list ratings for a driver
- */
 class RatingController extends Controller
 {
     public function store(Request $request)

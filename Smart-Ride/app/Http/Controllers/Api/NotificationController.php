@@ -13,14 +13,11 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-
         $notifications = AppNotification::where('user_id', $user->id)
             ->orderByDesc('created_at')
             ->limit(60)
             ->get();
-
         $unreadCount = $notifications->where('is_read', false)->count();
-
         return response()->json([
             'status'        => true,
             'unread_count'  => $unreadCount,
